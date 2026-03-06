@@ -309,7 +309,57 @@
   .fade-in:nth-child(3) { animation-delay: 0.15s; }
   .fade-in:nth-child(4) { animation-delay: 0.2s; }
 
-  /* ── FILTER STYLES ─────────────────────────────────────── */
+  /* ── DATE FILTER BAR ───────────────────────────────────── */
+  .date-filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 14px 40px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    backdrop-filter: blur(10px);
+  }
+  .date-filter-label {
+    font-size: 9px;
+    letter-spacing: 1.5px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-right: 4px;
+    white-space: nowrap;
+  }
+  .date-filter-all {
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    font-size: 11px;
+    cursor: pointer;
+    font-family: 'DM Mono', monospace;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .date-filter-all.active {
+    border-color: var(--accent2);
+    color: var(--accent2);
+    background: rgba(0,229,195,0.1);
+  }
+  .date-filter-chips {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+  .date-filter-sep {
+    width: 1px; height: 20px;
+    background: var(--border);
+    margin: 0 4px;
+  }
+
+
   .filter-btn {
     display: flex; align-items: center; gap: 8px;
     background: var(--surface2); border: 1px solid var(--border);
@@ -407,10 +457,15 @@
     <h1>Sales Performance Dashboard</h1>
     <div class="subtitle"><span class="live-dot"></span>US Market · Feb 22 – Mar 5, 2026 · USD Only</div>
   </div>
-  <div class="header-right" style="display:flex;align-items:center;gap:12px">
-    Teams tracked: <span>sf · rb · vh · ae</span><br>
-    Products tracked: <span>157–169</span> SKUs/day<br>
-    Period: <span>10 days</span>
+  <div class="header-right" style="display:flex;align-items:center;gap:16px">
+    <div style="text-align:right;line-height:1.8">
+      Teams tracked: <span>sf · rb · vh · ae</span><br>
+      Products tracked: <span>157–169</span> SKUs/day<br>
+      Period: <span>10 days</span>
+    </div>
+    <button id="filterToggleBtn" class="filter-btn" onclick="togglePanel()">
+      ⚙ Filters <span id="filterBadge" class="filter-badge"></span>
+    </button>
   </div>
 </div>
 
@@ -876,7 +931,8 @@ function resetFilters() {
 
 // Init filter UI
 document.addEventListener('DOMContentLoaded', () => {
-  // Date chips
+
+  // Date chips (filter panel)
   const dateContainer = document.getElementById('dateChips');
   ALL_DATES.forEach(d => {
     const el = document.createElement('button');
