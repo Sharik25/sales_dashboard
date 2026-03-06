@@ -1,0 +1,939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Comparative Sales Analysis — US</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Syne:wght@400;600;700;800&display=swap');
+
+  :root {
+    --bg: #0a0d14;
+    --surface: #111520;
+    --surface2: #161c2e;
+    --border: #1e2740;
+    --accent: #3d6aff;
+    --accent2: #00e5c3;
+    --accent3: #ff6b6b;
+    --accent4: #ffc96b;
+    --text: #e8ecf4;
+    --muted: #5a6480;
+    --positive: #00e5c3;
+    --negative: #ff5c5c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  .header {
+    padding: 32px 40px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    background: linear-gradient(180deg, #0d1220 0%, var(--bg) 100%);
+  }
+
+  .header-left h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent2) 0%, var(--accent) 60%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .header-left .subtitle {
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-top: 4px;
+  }
+
+  .header-right {
+    font-size: 11px;
+    color: var(--muted);
+    text-align: right;
+    line-height: 1.7;
+  }
+
+  .header-right span {
+    color: var(--accent2);
+    font-weight: 500;
+  }
+
+  .dashboard {
+    padding: 28px 40px;
+    display: grid;
+    gap: 20px;
+  }
+
+  /* KPI Row */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+  }
+
+  .kpi-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 24px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s;
+  }
+
+  .kpi-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--accent-line, var(--accent));
+    opacity: 0.8;
+  }
+
+  .kpi-card:nth-child(1) { --accent-line: var(--accent); }
+  .kpi-card:nth-child(2) { --accent-line: var(--accent2); }
+  .kpi-card:nth-child(3) { --accent-line: var(--accent4); }
+  .kpi-card:nth-child(4) { --accent-line: var(--accent3); }
+
+  .kpi-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+  }
+
+  .kpi-value {
+    font-family: 'Syne', sans-serif;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+
+  .kpi-delta {
+    font-size: 11px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .kpi-delta.pos { color: var(--positive); }
+  .kpi-delta.neg { color: var(--negative); }
+
+  /* Charts grid */
+  .charts-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+  }
+
+  .charts-row-3 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    color: var(--text);
+    margin-bottom: 4px;
+  }
+
+  .card-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+
+  .chart-wrap {
+    position: relative;
+    height: 220px;
+  }
+
+  .chart-wrap-tall {
+    position: relative;
+    height: 260px;
+  }
+
+  /* Team breakdown */
+  .team-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-top: 4px;
+  }
+
+  .team-item {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .team-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .team-name {
+    font-size: 11px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .team-val {
+    font-family: 'Syne', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  .bar-track {
+    height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .bar-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 1s ease;
+  }
+
+  /* Top products */
+  .product-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 4px;
+  }
+
+  .product-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+  }
+
+  .product-rank {
+    font-family: 'Syne', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--muted);
+    width: 20px;
+    flex-shrink: 0;
+  }
+
+  .product-sku {
+    flex: 1;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    color: var(--text);
+  }
+
+  .product-sales {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--accent2);
+  }
+
+  /* Delta chart */
+  .delta-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+  }
+
+  canvas { display: block; }
+
+  /* Pulse dot */
+  .live-dot {
+    display: inline-block;
+    width: 6px; height: 6px;
+    background: var(--accent2);
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 6px var(--accent2);
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .fade-in {
+    animation: fadeIn 0.6s ease both;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .fade-in:nth-child(1) { animation-delay: 0.05s; }
+  .fade-in:nth-child(2) { animation-delay: 0.1s; }
+  .fade-in:nth-child(3) { animation-delay: 0.15s; }
+  .fade-in:nth-child(4) { animation-delay: 0.2s; }
+
+  /* ── FILTER STYLES ─────────────────────────────────────── */
+  .filter-btn {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    color: var(--text); padding: 8px 16px; border-radius: 8px;
+    cursor: pointer; font-family: 'DM Mono', monospace; font-size: 12px;
+    transition: all 0.2s; position: relative;
+  }
+  .filter-btn:hover { border-color: var(--accent); color: var(--accent2); }
+  .filter-badge {
+    display: none; align-items: center; padding: 3px 8px;
+    background: var(--accent); color: white; border-radius: 12px;
+    font-size: 10px; white-space: nowrap; margin-left: 4px;
+  }
+  .filter-panel {
+    display: none; position: fixed; top: 0; right: 0; bottom: 0;
+    width: 340px; background: var(--surface); border-left: 1px solid var(--border);
+    z-index: 1000; flex-direction: column; overflow: hidden;
+    box-shadow: -8px 0 32px rgba(0,0,0,0.4);
+  }
+  .filter-panel.open { display: flex; }
+  .filter-panel-header {
+    padding: 20px 20px 16px; border-bottom: 1px solid var(--border);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .filter-panel-title {
+    font-family: 'Syne', sans-serif; font-size: 16px; font-weight: 700;
+  }
+  .filter-section { padding: 16px 20px; border-bottom: 1px solid var(--border); }
+  .filter-section-title {
+    font-size: 10px; color: var(--muted); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 10px;
+  }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .date-chip, .team-chip {
+    padding: 4px 10px; border-radius: 20px; border: 1px solid var(--border);
+    background: var(--bg); color: var(--muted); font-size: 11px;
+    cursor: pointer; font-family: 'DM Mono', monospace; transition: all 0.15s;
+  }
+  .date-chip.active, .team-chip.active {
+    border-color: var(--accent2); color: var(--accent2); background: rgba(0,229,195,0.08);
+  }
+  .team-chip[data-team="sf"].active { border-color: var(--accent); color: var(--accent); background: rgba(61,106,255,0.1); }
+  .team-chip[data-team="rb"].active { border-color: var(--accent2); color: var(--accent2); background: rgba(0,229,195,0.08); }
+  .team-chip[data-team="vh"].active { border-color: var(--accent4); color: var(--accent4); background: rgba(255,201,107,0.08); }
+  .team-chip[data-team="ae"].active { border-color: #c084fc; color: #c084fc; background: rgba(192,132,252,0.08); }
+  .sku-search {
+    width: 100%; padding: 8px 12px; background: var(--bg);
+    border: 1px solid var(--border); border-radius: 6px;
+    color: var(--text); font-family: 'DM Mono', monospace; font-size: 12px;
+    outline: none; margin-bottom: 8px;
+  }
+  .sku-search:focus { border-color: var(--accent); }
+  .sku-list {
+    max-height: 220px; overflow-y: auto; display: flex; flex-direction: column; gap: 2px;
+  }
+  .filter-check {
+    display: flex; align-items: center; gap: 8px; padding: 5px 8px;
+    border-radius: 5px; cursor: pointer; font-size: 11px;
+    color: var(--muted); transition: all 0.1s;
+  }
+  .filter-check:hover { background: var(--surface2); }
+  .filter-check.active { color: var(--text); }
+  .filter-check input { accent-color: var(--accent2); cursor: pointer; }
+  .filter-actions {
+    padding: 16px 20px; display: flex; gap: 10px; margin-top: auto;
+    border-top: 1px solid var(--border);
+  }
+  .btn-apply {
+    flex: 1; padding: 10px; background: var(--accent); border: none;
+    color: white; border-radius: 8px; font-family: 'DM Mono', monospace;
+    font-size: 12px; cursor: pointer; transition: opacity 0.2s;
+  }
+  .btn-apply:hover { opacity: 0.85; }
+  .btn-reset {
+    padding: 10px 16px; background: transparent; border: 1px solid var(--border);
+    color: var(--muted); border-radius: 8px; font-family: 'DM Mono', monospace;
+    font-size: 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-reset:hover { border-color: var(--accent3); color: var(--accent3); }
+  .all-btn {
+    padding: 3px 10px; border-radius: 12px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 10px;
+    cursor: pointer; font-family: 'DM Mono', monospace; margin-left: auto;
+  }
+  .all-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+  .filter-section-header { display: flex; align-items: center; margin-bottom: 10px; }
+  .filter-section-header .filter-section-title { margin-bottom: 0; }
+
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Sales Performance Dashboard</h1>
+    <div class="subtitle"><span class="live-dot"></span>US Market · Feb 22 – Mar 5, 2026 · USD Only</div>
+  </div>
+  <div class="header-right" style="display:flex;align-items:center;gap:12px">
+    Teams tracked: <span>sf · rb · vh · ae</span><br>
+    Products tracked: <span>157–169</span> SKUs/day<br>
+    Period: <span>10 days</span>
+  </div>
+</div>
+
+<div class="dashboard">
+
+  <!-- KPI Row -->
+  <div class="kpi-row">
+    <div class="kpi-card fade-in">
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-value" id="kpiRevenue">$131,991</div>
+      <div class="kpi-delta pos">↑ Trending upward — Mar 4–5 spike</div>
+    </div>
+    <div class="kpi-card fade-in">
+      <div class="kpi-label">Peak Day Sales</div>
+      <div class="kpi-value" id="kpiPeak">$31,040</div>
+      <div class="kpi-delta pos">↑ Mar 5 — highest day on record</div>
+    </div>
+    <div class="kpi-card fade-in">
+      <div class="kpi-label">Total Units Sold</div>
+      <div class="kpi-value" id="kpiUnits">3,948</div>
+      <div class="kpi-delta pos">↑ +797 units on Mar 4 peak</div>
+    </div>
+    <div class="kpi-card fade-in">
+      <div class="kpi-label">Avg Daily Revenue</div>
+      <div class="kpi-value" id="kpiAvg">$13,199</div>
+      <div class="kpi-delta neg">↓ High variance across period</div>
+    </div>
+  </div>
+
+  <!-- Main charts row -->
+  <div class="charts-row">
+    <div class="card fade-in">
+      <div class="card-title">Daily Revenue</div>
+      <div class="card-sub">USD sales by day</div>
+      <div class="chart-wrap-tall">
+        <canvas id="dailySalesChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title">Team Revenue Share</div>
+      <div class="card-sub">Cumulative 10-day split</div>
+      <div class="chart-wrap" style="height:180px; margin-bottom:16px;">
+        <canvas id="teamDonut"></canvas>
+      </div>
+      <div class="team-list" id="teamList"></div>
+    </div>
+  </div>
+
+  <!-- Second row -->
+  <div class="charts-row">
+    <div class="card fade-in">
+      <div class="card-title">Top 10 SKUs by Revenue</div>
+      <div class="card-sub">Cumulative period total</div>
+      <div class="product-list" id="topProducts"></div>
+    </div>
+
+    <div class="card fade-in">
+      <div class="card-title">Daily Units Sold</div>
+      <div class="card-sub">Quantity by day</div>
+      <div class="chart-wrap-tall">
+        <canvas id="unitsChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Delta row -->
+  <div id="deltaSection">
+  <div class="delta-row">
+    <div class="card fade-in">
+      <div class="card-title">vs. Previous Day Δ</div>
+      <div class="card-sub">Sales difference today vs yesterday</div>
+      <div class="chart-wrap">
+        <canvas id="deltaYdayChart"></canvas>
+      </div>
+    </div>
+    <div class="card fade-in">
+      <div class="card-title">vs. Same Day Last Week Δ</div>
+      <div class="card-sub">Sales difference today vs 7 days prior</div>
+      <div class="chart-wrap">
+        <canvas id="deltaWeekChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /deltaSection -->
+
+  <!-- Team stacked -->
+  <div class="card fade-in">
+    <div class="card-title">Daily Revenue by Team</div>
+    <div class="card-sub">Stacked contribution per day (USD)</div>
+    <div class="chart-wrap-tall" style="height:240px;">
+      <canvas id="teamStackChart"></canvas>
+    </div>
+  </div>
+
+
+
+<!-- Filter Panel -->
+<div id="filterPanel" class="filter-panel">
+  <div class="filter-panel-header">
+    <div class="filter-panel-title">Filters</div>
+    <button class="btn-reset" onclick="document.getElementById('filterPanel').classList.remove('open')" style="padding:4px 10px">✕</button>
+  </div>
+  <div class="filter-section">
+    <div class="filter-section-header">
+      <div class="filter-section-title">Dates</div>
+      <button id="allDatesBtn" class="all-btn">Toggle all</button>
+    </div>
+    <div id="dateChips" class="chip-row"></div>
+  </div>
+  <div class="filter-section">
+    <div class="filter-section-title">Teams</div>
+    <div class="chip-row">
+      <button class="team-chip active" data-team="sf">SF</button>
+      <button class="team-chip active" data-team="rb">RB</button>
+      <button class="team-chip active" data-team="vh">VH</button>
+      <button class="team-chip active" data-team="ae">AE</button>
+    </div>
+  </div>
+  <div class="filter-section" style="flex:1;display:flex;flex-direction:column;overflow:hidden">
+    <div class="filter-section-header">
+      <div class="filter-section-title">SKUs</div>
+      <button id="skuAllBtn" class="all-btn">Toggle visible</button>
+    </div>
+    <input id="skuSearchInput" class="sku-search" placeholder="Search SKUs..." type="text">
+    <div id="skuList" class="sku-list"></div>
+  </div>
+  <div class="filter-actions">
+    <button class="btn-reset" onclick="resetFilters()">Reset</button>
+    <button class="btn-apply" onclick="applyFilters()">Apply Filters</button>
+  </div>
+</div>
+
+</div>
+
+
+<script>
+// ── RAW GRANULAR DATA ───────────────────────────────────────────────────────
+const RAW = [{"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-206", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R106-018", "sales": 179.91, "units": 9}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL008-001", "sales": 12.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-251", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-028", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R228-007", "sales": 27.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R243-106", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL005-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-125", "sales": 11.52, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-016", "sales": 35.56, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-219", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-007", "sales": 9.69, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-002", "sales": 8.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R786-105", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL011-001", "sales": 9.49, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-400", "sales": 81.95, "units": 11}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-239", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R044-085", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-118", "sales": 32.9, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-106", "sales": 453.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-003", "sales": 89.94999999999999, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-011", "sales": 44.77, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-012", "sales": 24.75, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-253", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-015", "sales": 12.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R339-029", "sales": 179.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-080", "sales": 74.94, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R303-340", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-227", "sales": 29.94, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-259", "sales": 25.59, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-256", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-031", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-100", "sales": 106.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-029", "sales": 44.95, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-014", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R437-205", "sales": 19.58, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-240", "sales": 75.6, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL005-002", "sales": 11.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL008-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-327", "sales": 191.1, "units": 6}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-164", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R243-002", "sales": 296.84, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-107", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R580-008", "sales": 59.900000000000006, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R580-008", "sales": 59.900000000000006, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R580-008", "sales": 59.900000000000006, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R580-008", "sales": 59.900000000000006, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-027", "sales": 174.75000000000003, "units": 23}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL010-002", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-029", "sales": 6.79, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-044", "sales": 19.9, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R106-011", "sales": 660.6000000000003, "units": 22}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R580-001", "sales": 112.41, "units": 7}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R243-103", "sales": 19.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-022", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL016-001", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-214", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-109", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R044-022", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "vh", "sku": "R153-006", "sales": 0.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-001", "sales": 36.45, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-001", "sales": 35.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-011", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R437-003", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "ae", "sku": "FBA173HCMHY1.missing1", "sales": 0.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-100", "sales": 63.96, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R762-001", "sales": 207.12, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-213", "sales": 15.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-252", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-113", "sales": 211.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-024", "sales": 69.23, "units": 8}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-013", "sales": 29.97, "units": 3}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-019", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-102", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-220", "sales": 29.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R303-086-1", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-021", "sales": 9.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R799-002", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-223", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R163-131", "sales": 93.0, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R786-101", "sales": 164.89, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R786-106", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-258", "sales": 79.96, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-023", "sales": 367.9999999999998, "units": 38}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-023", "sales": 367.9999999999998, "units": 38}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-005", "sales": 17.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R437-202", "sales": 9.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-002", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-006", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R044-098", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-005", "sales": 164.44, "units": 7}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-015", "sales": 9.49, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R752-005", "sales": 975.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-263", "sales": 29.29, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-014", "sales": 12.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-030", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-270", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-248", "sales": 19.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-154", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-004", "sales": 335.78, "units": 8}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-017", "sales": 31.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R059-020", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-105", "sales": 443.94, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-013", "sales": 19.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R303-303", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-112", "sales": 39.96, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-235", "sales": 17.0, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R568-001", "sales": 113.66, "units": 6}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R044-482", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-025", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL005-004", "sales": 14.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R568-002", "sales": 28.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R568-004", "sales": 18.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL010-001", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL007-001", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R163-142", "sales": 23.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R020-118", "sales": 59.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R106-004", "sales": 44.3, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R437-200", "sales": 8.75, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-233", "sales": 12.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-001", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-009", "sales": 7.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R152-012", "sales": 493.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R260-101", "sales": 106.0, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-226", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-228", "sales": 7.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-246", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-017", "sales": 48.44, "units": 5}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-211", "sales": 32.02, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R806-012", "sales": 10.39, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-255-1", "sales": 179.91, "units": 9}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R106-003", "sales": 32.18, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R712-007", "sales": 221.47000000000003, "units": 7}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-257", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-265", "sales": 15.99, "units": 1}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "R044-049", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "vh", "sku": "R153-002", "sales": 0.0, "units": 0}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-005", "sales": 33.2, "units": 4}, {"date": "Feb 22", "dateIdx": 0, "team": "sf", "sku": "PL001-006", "sales": 19.98, "units": 2}, {"date": "Feb 22", "dateIdx": 0, "team": "rb", "sku": "R695-040", "sales": 55.79, "units": 7}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R020-010", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R020-118", "sales": 239.92, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-022", "sales": 15.55, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R049-011", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-020", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R106-003", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R106-004", "sales": 22.15, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "vh", "sku": "R153-006", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R243-001", "sales": 76.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-105", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-101", "sales": 207.76, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-007", "sales": 104.97, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-017", "sales": 138.4, "units": 12}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-200", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R568-004", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-220", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-001", "sales": 482.4900000000002, "units": 41}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-023", "sales": 294.3999999999998, "units": 32}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-104", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-202", "sales": 29.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL001-001", "sales": 89.58999999999999, "units": 5}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R303-086-1", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-021", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL001-005", "sales": 17.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL001-013", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL001-011", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-202", "sales": 9.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R799-002", "sales": 27.92, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL010-001", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R786-107", "sales": 239.84, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-112", "sales": 9.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL007-001", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-212", "sales": 29.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-211", "sales": 15.8, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-226", "sales": 7.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-228", "sales": 7.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-233", "sales": 19.47, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-001", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-002", "sales": 7.95, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-005", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-006", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-009", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-012", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R152-012", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-255-1", "sales": 119.93999999999998, "units": 6}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-257", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-265", "sales": 15.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-223", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-248", "sales": 9.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-235", "sales": 34.0, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-405", "sales": 11.79, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-407", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R163-131", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R163-142", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL002-003", "sales": 119.94, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R020-011", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-098", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-164", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R243-002", "sales": 148.42, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-113", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-005", "sales": 120.25, "units": 5}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-006", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R568-001", "sales": 246.28, "units": 7}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R580-008", "sales": 934.44, "units": 18}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R580-008", "sales": 934.44, "units": 18}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-007", "sales": 9.69, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-482", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-227", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R152-002", "sales": 450.5, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-024", "sales": 97.63, "units": 8}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-240", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-027", "sales": 160.77, "units": 21}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-025", "sales": 7.88, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R752-005", "sales": 975.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL005-002", "sales": 11.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL005-004", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R752-114", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-263", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-260", "sales": 49.63, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL010-002", "sales": 29.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R786-101", "sales": 29.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R786-106", "sales": 59.96, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-259", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R752-016", "sales": 743.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL011-001", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-013", "sales": 89.91, "units": 9}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-014", "sales": 12.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-019", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-029", "sales": 6.79, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-030", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-204", "sales": 9.78, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-256", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-400", "sales": 14.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-258", "sales": 59.97, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-239", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-100", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-102", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R163-140", "sales": 29.95, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-099", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R044-049", "sales": 14.89, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-028", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-044", "sales": 39.8, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-080", "sales": 24.98, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-118", "sales": 65.8, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-154", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-177", "sales": 39.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-206", "sales": 28.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R106-011", "sales": 516.34, "units": 22}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R106-018", "sales": 159.92000000000002, "units": 7}, {"date": "Feb 23", "dateIdx": 1, "team": "vh", "sku": "R153-002", "sales": 95.02, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R228-007", "sales": 13.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-106", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-104", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-004", "sales": 181.59, "units": 7}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R580-001", "sales": 274.78000000000003, "units": 8}, {"date": "Feb 23", "dateIdx": 1, "team": "ae", "sku": "FBA173HCMHY1.missing1", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R243-100", "sales": 347.29, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R243-103", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R243-107", "sales": 110.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-003", "sales": 53.97, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-005", "sales": 16.6, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-011", "sales": 80.91, "units": 7}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-012", "sales": 33.0, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-017", "sales": 31.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-100", "sales": 79.95, "units": 5}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL001-006", "sales": 9.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-029", "sales": 17.98, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R762-001", "sales": 3404.26, "units": 22}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-040", "sales": 55.79, "units": 8}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL005-003", "sales": 14.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "PL008-001", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-213", "sales": 15.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-125", "sales": 12.0, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-003", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-010", "sales": 13.95, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R806-015", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-003", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R437-205", "sales": 48.95, "units": 3}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R339-029", "sales": 179.0, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R339-029", "sales": 179.0, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R712-016", "sales": 35.56, "units": 4}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R303-340", "sales": 76.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-214", "sales": 14.34, "units": 2}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-219", "sales": 5.49, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "rb", "sku": "R695-252", "sales": 9.99, "units": 1}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R260-114", "sales": 0.0, "units": 0}, {"date": "Feb 23", "dateIdx": 1, "team": "sf", "sku": "R059-327", "sales": 127.4, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-049", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-028", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-044", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-080", "sales": 74.94, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-118", "sales": 97.0, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-177", "sales": 39.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-206", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R106-011", "sales": 165.19000000000003, "units": 9}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R106-018", "sales": 79.96, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "vh", "sku": "R153-002", "sales": 95.02, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R228-007", "sales": 69.95, "units": 5}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-104", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R712-004", "sales": 241.41, "units": 9}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R437-003", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R580-001", "sales": 593.2700000000001, "units": 18}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-404", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "ae", "sku": "R630-007", "sales": 7.97, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R243-100", "sales": 1041.87, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R243-106", "sales": 119.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R243-107", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R580-007", "sales": 58.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-003", "sales": 107.93999999999998, "units": 7}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-005", "sales": 16.6, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-011", "sales": 53.940000000000005, "units": 6}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-012", "sales": 49.5, "units": 6}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-017", "sales": 15.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-100", "sales": 47.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-006", "sales": 9.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-029", "sales": 8.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R762-001", "sales": 414.24, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-040", "sales": 63.76, "units": 8}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL005-003", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-253", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL008-001", "sales": 12.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-213", "sales": 31.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-125", "sales": 6.0, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-003", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-010", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-015", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R437-205", "sales": 48.95, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R339-029", "sales": 4833.0, "units": 7}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R712-016", "sales": 97.79, "units": 5}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R303-340", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL016-001", "sales": 14.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-214", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-219", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-251", "sales": 29.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-252", "sales": 29.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-112", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-327", "sales": 127.4, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R020-118", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-022", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-020", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R106-003", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R106-004", "sales": 44.3, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R243-001", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-101", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R712-007", "sales": 454.87, "units": 9}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R712-017", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R568-002", "sales": 28.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R568-004", "sales": 48.56, "units": 5}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R541-011-stickerless", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-220", "sales": 29.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R195-527", "sales": 7.8, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-001", "sales": 7.29, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-023", "sales": 110.4, "units": 10}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R437-104", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-202", "sales": 89.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-001", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-021", "sales": 27.0, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-005", "sales": 53.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-013", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-011", "sales": 31.96, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R437-202", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-257", "sales": 24.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R303-303", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R799-002", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL010-001", "sales": 9.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R786-107", "sales": 14.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-112", "sales": 29.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-212", "sales": 29.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-211", "sales": 15.8, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-226", "sales": 39.95, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-228", "sales": 15.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-233", "sales": 25.96, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-001", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-002", "sales": 7.95, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-005", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-006", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-016", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-255-1", "sales": 139.92999999999998, "units": 7}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-257", "sales": 33.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-264", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-265", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-223", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-248", "sales": 19.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-245", "sales": 8.49, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-246", "sales": 7.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-235", "sales": 8.25, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-430", "sales": 12.6, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-405", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R163-131", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R163-142", "sales": 23.95, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL002-003", "sales": 39.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-286", "sales": 19.8, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R339-028", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-098", "sales": 8.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R243-002", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-113", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R712-005", "sales": 167.32, "units": 7}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R568-001", "sales": 76.02000000000001, "units": 4}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R580-008", "sales": 287.52, "units": 10}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R580-008", "sales": 287.52, "units": 10}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R580-003", "sales": 18.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R295-013", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-007", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R044-482", "sales": 12.69, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R152-002", "sales": 1802.0, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL001-002", "sales": 8.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-024", "sales": 79.12, "units": 6}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-240", "sales": 25.2, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-027", "sales": 125.81999999999996, "units": 18}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-025", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R752-005", "sales": 975.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-042", "sales": 8.29, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL005-002", "sales": 11.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R752-114", "sales": 979.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R752-114", "sales": 979.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-263", "sales": 29.29, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-260", "sales": 49.88, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL010-002", "sales": 29.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "PL013-002", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R786-101", "sales": 29.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R786-106", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R059-259", "sales": 25.59, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R752-115", "sales": 979.2, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R752-016", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-013", "sales": 9.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-014", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-019", "sales": 18.98, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R806-029", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R437-204", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-256", "sales": 19.99, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-400", "sales": 0.0, "units": 2}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-258", "sales": 59.97, "units": 3}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-249", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R695-239", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-100", "sales": 103.88, "units": 1}, {"date": "Feb 24", "dateIdx": 2, "team": "sf", "sku": "R260-102", "sales": 0.0, "units": 0}, {"date": "Feb 24", "dateIdx": 2, "team": "rb", "sku": "R163-140", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R044-098", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-164", "sales": 24.4, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-113", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R267-101", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R712-005", "sales": 117.63, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R437-006", "sales": 15.5, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R568-001", "sales": 75.96, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R580-008", "sales": 347.42, "units": 9}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R580-003", "sales": 37.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "vh", "sku": "R153-007-stickerless", "sales": 41.31, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R541-121", "sales": 99.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R044-482", "sales": 12.69, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R152-002", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-002", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-024", "sales": 19.78, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-240", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-027", "sales": 118.82999999999996, "units": 17}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-025", "sales": 7.88, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R752-005", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-042", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL005-002", "sales": 21.0, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL008-002", "sales": 15.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R752-114", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL008-003", "sales": 9.02, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-263", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-260", "sales": 24.94, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL010-002", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R786-101", "sales": 74.95, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-259", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "ae", "sku": "R802-004", "sales": 0.0, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R752-115", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL011-001", "sales": 9.49, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-013", "sales": 9.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-014", "sales": 12.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-019", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-029", "sales": 20.37, "units": 3}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-030", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R437-204", "sales": 4.89, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-256", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-400", "sales": 29.520000000000003, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-258", "sales": 39.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R712-031", "sales": 20.0, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-239", "sales": 9.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-100", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-102", "sales": 530.0, "units": 3}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R020-118", "sales": 29.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-020", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R106-004", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R712-007", "sales": 279.92, "units": 8}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R568-002", "sales": 57.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R568-004", "sales": 20.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-270", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-220", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R243-102", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R195-527", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-001", "sales": 43.74, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-023", "sales": 110.4, "units": 10}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-202", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-001", "sales": 35.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-021", "sales": 18.28, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-005", "sales": 17.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-013", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-011", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-257", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R303-303", "sales": 239.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL010-001", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R786-107", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-112", "sales": 19.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-212", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-211", "sales": 31.6, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-226", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-228", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-233", "sales": 12.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-002", "sales": 15.9, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-009", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-012", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R152-013", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-275", "sales": 23.65, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-255-1", "sales": 119.53999999999998, "units": 6}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-257", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-265", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-248", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-245", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-246", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-235", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R044-430", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R044-407", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R163-131", "sales": 46.48, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R163-142", "sales": 23.78, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-286", "sales": 19.8, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R044-099", "sales": 14.56, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-044", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-080", "sales": 149.88, "units": 6}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-118", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-177", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-206", "sales": 139.95, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R106-011", "sales": 168.29999999999995, "units": 7}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R106-018", "sales": 139.92999999999998, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "vh", "sku": "R153-002", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R228-007", "sales": 13.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-106", "sales": 453.0, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R292-101", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R712-004", "sales": 55.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R437-003", "sales": 29.74, "units": 3}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R580-001", "sales": 349.72, "units": 12}, {"date": "Feb 25", "dateIdx": 3, "team": "ae", "sku": "R630-007", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R243-100", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R243-106", "sales": 229.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R580-007", "sales": 58.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-003", "sales": 125.92999999999998, "units": 8}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-005", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-011", "sales": 62.75000000000001, "units": 7}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-012", "sales": 33.0, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-017", "sales": 47.97, "units": 3}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-100", "sales": 79.95, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-006", "sales": 9.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-029", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-012", "sales": 53.97, "units": 3}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R762-001", "sales": 1160.89, "units": 11}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-040", "sales": 79.54, "units": 10}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL001-014", "sales": 9.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-253", "sales": 22.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL008-001", "sales": 12.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-213", "sales": 63.96, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-125", "sales": 41.64, "units": 5}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-015", "sales": 25.98, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R806-022", "sales": 9.45, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R437-205", "sales": 39.16, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R339-029", "sales": 358.0, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R339-029", "sales": 358.0, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R712-016", "sales": 53.34, "units": 4}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL016-001", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-214", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-251", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "rb", "sku": "R695-252", "sales": 9.99, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "PL004-003", "sales": 0.0, "units": 0}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-112", "sales": 547.0, "units": 1}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R260-114", "sales": 139.9, "units": 2}, {"date": "Feb 25", "dateIdx": 3, "team": "sf", "sku": "R059-327", "sales": 191.1, "units": 6}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-099", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-049", "sales": 11.24, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-044", "sales": 39.8, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-080", "sales": 199.84, "units": 8}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-167", "sales": 24.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-118", "sales": 98.7, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-154", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-206", "sales": 83.97, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R106-011", "sales": 299.2, "units": 12}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R106-018", "sales": 39.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R228-007", "sales": 83.94, "units": 6}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-106", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-104", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R712-004", "sales": 111.46, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-003", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R580-001", "sales": 210.08, "units": 9}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R243-100", "sales": 1382.33, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R243-103", "sales": 19.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R243-106", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R580-007", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-003", "sales": 71.96, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-005", "sales": 8.3, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-011", "sales": 71.92, "units": 8}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-012", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-017", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-100", "sales": 15.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-006", "sales": 119.87999999999998, "units": 8}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-029", "sales": 17.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-012", "sales": 287.84, "units": 8}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R762-001", "sales": 258.9, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-040", "sales": 151.43, "units": 17}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-014", "sales": 329.67, "units": 21}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL005-003", "sales": 44.97, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-253", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL008-001", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-213", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-125", "sales": 17.28, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-003", "sales": 18.0, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-015", "sales": 12.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-022", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R725-010", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-205", "sales": 68.32999999999998, "units": 7}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R339-029", "sales": 161.1, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R339-029", "sales": 179.0, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R712-016", "sales": 35.56, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL016-001", "sales": 14.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-214", "sales": 7.17, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-251", "sales": 19.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-252", "sales": 29.97, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-402", "sales": 14.75, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-109", "sales": 1370.0, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-112", "sales": 2144.24, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-114", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-327", "sales": 63.7, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R020-118", "sales": 29.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-022", "sales": 15.55, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-122", "sales": 14.58, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-020", "sales": 33.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R106-004", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R163-021", "sales": 69.86, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R204-509", "sales": 74.25, "units": 5}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-105", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-101", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R712-007", "sales": 279.92, "units": 8}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R568-002", "sales": 28.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R568-004", "sales": 41.96, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-220", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R243-102", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-001", "sales": 36.45, "units": 5}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-023", "sales": 303.5999999999998, "units": 31}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-104", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-202", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R152-008", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-001", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-021", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-005", "sales": 233.87, "units": 7}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-013", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-011", "sales": 207.74000000000004, "units": 14}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-202", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R303-303", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R799-002", "sales": 28.49, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL010-001", "sales": 9.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-112", "sales": 19.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-212", "sales": 14.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-211", "sales": 15.8, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-226", "sales": 7.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-228", "sales": 7.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-233", "sales": 25.96, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-002", "sales": 7.95, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-005", "sales": 8.15, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-006", "sales": 45.75, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-103", "sales": 14.8, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-275", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-255-1", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-257", "sales": 33.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-265", "sales": 15.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-223", "sales": 9.56, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-246", "sales": 15.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-235", "sales": 16.75, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-430", "sales": 12.24, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R163-131", "sales": 22.87, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R163-142", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-286", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-098", "sales": 8.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-164", "sales": 97.6, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R243-002", "sales": 148.42, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R712-005", "sales": 149.22, "units": 6}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-006", "sales": 15.35, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R541-002", "sales": 0.0, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R568-001", "sales": 19.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R580-008", "sales": 366.6, "units": 9}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R580-003", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "vh", "sku": "R153-007-stickerless", "sales": 41.49, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "vh", "sku": "R153-007-stickerless", "sales": 41.31, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R541-121", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-015", "sales": 9.49, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "ae", "sku": "R584-009", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R044-482", "sales": 12.69, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-227", "sales": 29.94, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R152-002", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL001-002", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-024", "sales": 9.89, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-240", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-027", "sales": 0.0, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-027", "sales": 90.87, "units": 13}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-025", "sales": 39.4, "units": 3}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R752-005", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R152-009", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL005-002", "sales": 11.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL008-002", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL008-003", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-263", "sales": 29.29, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-260", "sales": 24.94, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL010-002", "sales": 14.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL013-002", "sales": 9.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R786-101", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R786-105", "sales": 14.99, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R059-259", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "ae", "sku": "R802-004", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "PL011-001", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-013", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-014", "sales": 0.0, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-019", "sales": 18.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-029", "sales": 13.58, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R806-030", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R437-204", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-256", "sales": 39.98, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-400", "sales": 29.08, "units": 4}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-258", "sales": 119.93999999999998, "units": 6}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R712-031", "sales": 20.0, "units": 1}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-216", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "rb", "sku": "R695-239", "sales": 0.0, "units": 0}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-100", "sales": 424.0, "units": 2}, {"date": "Feb 26", "dateIdx": 4, "team": "sf", "sku": "R260-102", "sales": 212.0, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-164", "sales": 24.4, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R243-002", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R260-113", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-005", "sales": 287.29, "units": 12}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R568-001", "sales": 99.95, "units": 3}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R580-008", "sales": 58.95, "units": 3}, {"date": "Mar 1", "dateIdx": 5, "team": "vh", "sku": "R153-007-stickerless", "sales": 42.62, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R044-482", "sales": 12.69, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-227", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-024", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-240", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-027", "sales": 76.89, "units": 9}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-025", "sales": 31.52, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R752-005", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL005-002", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL005-004", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-263", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R786-101", "sales": 13.49, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-259", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "ae", "sku": "R802-004", "sales": 70.0, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL011-001", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-013", "sales": 9.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-014", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-029", "sales": 6.79, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-256", "sales": 39.98, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-400", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-258", "sales": 59.97, "units": 3}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-239", "sales": 9.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R260-100", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-044", "sales": 39.8, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-080", "sales": 24.98, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-118", "sales": 32.9, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-206", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R106-011", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R106-018", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "vh", "sku": "R153-002", "sales": 47.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R228-007", "sales": 41.97, "units": 3}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R260-106", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-004", "sales": 531.81, "units": 7}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R580-001", "sales": 136.39, "units": 7}, {"date": "Mar 1", "dateIdx": 5, "team": "ae", "sku": "FBA173HCMHY1.missing1", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R243-103", "sales": 19.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R580-007", "sales": 58.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-003", "sales": 143.92, "units": 8}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-005", "sales": 16.43, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-011", "sales": 80.73, "units": 9}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-012", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-017", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-100", "sales": 47.97, "units": 3}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL001-006", "sales": 9.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-029", "sales": 8.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R762-001", "sales": 25.89, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-040", "sales": 71.73, "units": 9}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL008-001", "sales": 12.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-213", "sales": 15.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-125", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-015", "sales": 12.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R437-205", "sales": 9.79, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R339-029", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-016", "sales": 106.68, "units": 6}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL016-001", "sales": 14.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-327", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R020-118", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R049-011", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R106-003", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R106-004", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "vh", "sku": "R153-006", "sales": 41.19, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R204-509", "sales": 13.5, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R260-105", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R260-101", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-007", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-017", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R437-200", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R568-002", "sales": 57.4, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R568-004", "sales": 89.91, "units": 7}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-220", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R195-545", "sales": 7.04, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-001", "sales": 43.74, "units": 4}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-023", "sales": 46.0, "units": 5}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL001-001", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-021", "sales": 18.0, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL001-005", "sales": 35.98, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL001-013", "sales": 39.96, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "PL001-011", "sales": 7.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R437-202", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R799-002", "sales": 28.49, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-112", "sales": 19.98, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-212", "sales": 14.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-211", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-226", "sales": 7.99, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-228", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-233", "sales": 45.43000000000001, "units": 7}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-009", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R806-012", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R152-012", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-275", "sales": 47.18, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-255-1", "sales": 39.98, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R712-040", "sales": 7.79, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-248", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-246", "sales": 15.98, "units": 2}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R695-235", "sales": 8.25, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R163-131", "sales": 22.87, "units": 1}, {"date": "Mar 1", "dateIdx": 5, "team": "rb", "sku": "R163-142", "sales": 0.0, "units": 0}, {"date": "Mar 1", "dateIdx": 5, "team": "sf", "sku": "R059-286", "sales": 19.81, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-049", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-044", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-080", "sales": 812.02, "units": 19}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-118", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-154", "sales": 24.94, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-177", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-206", "sales": 27.9, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R106-011", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R106-018", "sales": 19.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "vh", "sku": "R153-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R228-007", "sales": 13.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-004", "sales": 83.97, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R580-001", "sales": 799.36, "units": 22}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R243-100", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R243-103", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R243-107", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R580-007", "sales": 58.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-003", "sales": 53.97, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-005", "sales": 8.3, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-011", "sales": 62.93, "units": 6}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-012", "sales": 165.0, "units": 8}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-017", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-100", "sales": 111.93, "units": 7}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-006", "sales": 19.98, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-029", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-012", "sales": 17.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R762-001", "sales": 51.78, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-040", "sales": 103.61, "units": 13}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL005-003", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL008-001", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-213", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-125", "sales": 47.52, "units": 4}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-010", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-015", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL013-004", "sales": 7.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R437-205", "sales": 39.16, "units": 4}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R339-029", "sales": 150.05, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-016", "sales": 17.78, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R303-340", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL016-001", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-214", "sales": 7.17, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-219", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-252", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-403", "sales": 12.24, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-327", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-164", "sales": 24.4, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R243-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-005", "sales": 141.08999999999995, "units": 6}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R568-001", "sales": 199.9, "units": 8}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R580-008", "sales": 11.79, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R580-003", "sales": 18.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "vh", "sku": "R153-007-stickerless", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-007", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-015", "sales": 9.49, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-482", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R152-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-002", "sales": 8.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-024", "sales": 9.89, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-027", "sales": 139.8, "units": 16}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-025", "sales": 7.88, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R752-005", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL005-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL008-002", "sales": 63.96, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R752-114", "sales": 839.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL010-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R786-101", "sales": 29.98, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R786-106", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "ae", "sku": "R802-004", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R752-016", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-013", "sales": 9.99, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-014", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-029", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R437-204", "sales": 4.89, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-256", "sales": 53.97, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-400", "sales": 28.96, "units": 4}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-258", "sales": 59.97, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-031", "sales": 20.0, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-239", "sales": 9.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R163-140", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R020-118", "sales": 59.98, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-022", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R106-004", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "vh", "sku": "R153-006", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R204-544", "sales": 29.34, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R204-509", "sales": 20.25, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R243-001", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R260-101", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-007", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-017", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R568-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R568-004", "sales": 59.940000000000005, "units": 6}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-220", "sales": 29.39, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R195-545", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R195-527", "sales": 7.8, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-001", "sales": 157.34999999999997, "units": 21}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-023", "sales": 377.1999999999998, "units": 29}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-023", "sales": 9.69, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-202", "sales": 29.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-001", "sales": 17.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-021", "sales": 45.0, "units": 5}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-237", "sales": 22.94, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-005", "sales": 665.63, "units": 7}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL001-011", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R437-202", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R799-002", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL010-001", "sales": 9.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R786-107", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-112", "sales": 59.940000000000005, "units": 6}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL007-001", "sales": 20.6, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-212", "sales": 53.96, "units": 4}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-211", "sales": 47.400000000000006, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-226", "sales": 7.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-228", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-233", "sales": 32.45, "units": 5}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R806-002", "sales": 23.85, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-275", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-255-1", "sales": 57.97, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-257", "sales": 16.99, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-265", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R712-040", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-223", "sales": 4.78, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-248", "sales": 39.96, "units": 4}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-246", "sales": 15.98, "units": 2}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R695-235", "sales": 8.25, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-430", "sales": 12.52, "units": 1}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R044-405", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "rb", "sku": "R163-131", "sales": 67.98, "units": 3}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Mar 2", "dateIdx": 6, "team": "sf", "sku": "R059-286", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R044-098", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-164", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R260-113", "sales": 211.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R712-005", "sales": 71.08, "units": 3}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R568-001", "sales": 19.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R580-008", "sales": 400.86, "units": 10}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R580-003", "sales": 18.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "vh", "sku": "R153-007-stickerless", "sales": 41.49, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-014", "sales": 7.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-015", "sales": 9.49, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R044-482", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R152-002", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-002", "sales": 8.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-024", "sales": 55.23, "units": 7}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-240", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-027", "sales": 119.10999999999996, "units": 16}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-025", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R752-005", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-042", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL005-002", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL008-002", "sales": 15.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R752-114", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-263", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL010-002", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL013-002", "sales": 9.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R786-101", "sales": 14.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-259", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R752-115", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-013", "sales": 67.9, "units": 8}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-014", "sales": 30.7, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-019", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-030", "sales": 19.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R437-204", "sales": 23.21, "units": 5}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-256", "sales": 179.9, "units": 10}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-400", "sales": 211.0600000000001, "units": 26}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-258", "sales": 593.6700000000001, "units": 27}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R712-031", "sales": 20.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-239", "sales": 19.78, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-266", "sales": 6.49, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R260-100", "sales": 209.88, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R044-099", "sales": 14.64, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-080", "sales": 74.94, "units": 3}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-118", "sales": 32.9, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-154", "sales": 24.94, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-177", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-206", "sales": 27.9, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R106-011", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R106-018", "sales": 0.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "vh", "sku": "R153-002", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R228-007", "sales": 154.38, "units": 10}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R712-004", "sales": 193.15, "units": 5}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R580-001", "sales": 636.0100000000001, "units": 15}, {"date": "Mar 3", "dateIdx": 7, "team": "ae", "sku": "R630-007", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R243-100", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R243-103", "sales": 39.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R243-106", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R580-007", "sales": 58.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-003", "sales": 35.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-005", "sales": 16.6, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-011", "sales": 62.75000000000001, "units": 7}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-012", "sales": 49.5, "units": 6}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-017", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-100", "sales": 363.7400000000001, "units": 26}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-006", "sales": 16.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-029", "sales": 8.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-012", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R762-001", "sales": 103.56, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-040", "sales": 71.73, "units": 9}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL005-003", "sales": 47.96, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL008-001", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-213", "sales": 15.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-125", "sales": 181.50000000000009, "units": 25}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-011", "sales": 5.95, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-015", "sales": 30.96, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL013-004", "sales": 7.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R437-205", "sales": 39.16, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R339-029", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R712-016", "sales": 328.93, "units": 7}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL016-001", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-214", "sales": 7.17, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-251", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-252", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R044-403", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-327", "sales": 31.85, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R020-010", "sales": 14.79, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R020-118", "sales": 119.96, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R106-004", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "vh", "sku": "R153-006", "sales": 41.19, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R204-544", "sales": 19.56, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R204-509", "sales": 27.82, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R712-007", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R568-002", "sales": 173.94, "units": 6}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R568-004", "sales": 179.82, "units": 14}, {"date": "Mar 3", "dateIdx": 7, "team": "ae", "sku": "R598-002", "sales": 80.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-220", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R195-527", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-001", "sales": 58.32, "units": 6}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-023", "sales": 340.8499999999998, "units": 30}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-023", "sales": 340.8499999999998, "units": 30}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R437-104", "sales": 77.90000000000002, "units": 15}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-202", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R152-008", "sales": 899.0, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-001", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-021", "sales": 36.0, "units": 4}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-237", "sales": 274.67999999999995, "units": 12}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-005", "sales": 23.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-013", "sales": 9.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL001-011", "sales": 19.97, "units": 3}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R437-202", "sales": 9.49, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-257", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL010-001", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R786-107", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-112", "sales": 29.97, "units": 3}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL007-001", "sales": 10.3, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-212", "sales": 12.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-211", "sales": 79.0, "units": 5}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-226", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-228", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-233", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-002", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R806-006", "sales": 9.15, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-255-1", "sales": 521.7100000000002, "units": 29}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-257", "sales": 16.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-223", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-248", "sales": 19.98, "units": 2}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-245", "sales": 6.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-246", "sales": 7.99, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R695-235", "sales": 8.25, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R044-430", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R163-131", "sales": 21.95, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "rb", "sku": "R163-142", "sales": 20.57, "units": 1}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Mar 3", "dateIdx": 7, "team": "sf", "sku": "R059-286", "sales": 19.81, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R044-099", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-080", "sales": 143.72, "units": 6}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-118", "sales": 32.9, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-154", "sales": 24.94, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-206", "sales": 111.6, "units": 4}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R106-011", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R106-018", "sales": 60.97, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "vh", "sku": "R153-005", "sales": 79.98, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R228-007", "sales": 1698.640000000001, "units": 128}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-106", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R712-004", "sales": 111.58, "units": 4}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-003", "sales": 9.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R580-001", "sales": 194.59, "units": 7}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R243-103", "sales": 39.98, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R243-106", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R580-007", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-003", "sales": 35.98, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-005", "sales": 24.9, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-011", "sales": 26.97, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-012", "sales": 41.25, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-017", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-100", "sales": 797.4300000000004, "units": 57}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-006", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-029", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-012", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R762-001", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-040", "sales": 71.73, "units": 9}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R303-309", "sales": 0.0, "units": 102}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-014", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL005-003", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-100", "sales": 11.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-253", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL008-001", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-213", "sales": 31.98, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-125", "sales": 411.7500000000002, "units": 45}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-011", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-015", "sales": 5.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-022", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL013-004", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-205", "sales": 116.40000000000002, "units": 12}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R339-029", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R712-016", "sales": 25.47, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL016-001", "sales": 10.15, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-214", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-219", "sales": 5.49, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-252", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-112", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-114", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-327", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-164", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-113", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R712-005", "sales": 162.33, "units": 7}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-006", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R568-001", "sales": 79.96, "units": 4}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R580-008", "sales": 94.45, "units": 6}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R580-003", "sales": 18.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R295-106", "sales": 445.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "vh", "sku": "R153-007-stickerless", "sales": 42.0, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R541-121", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R541-124", "sales": 0.0, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-014", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R044-482", "sales": 12.57, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R152-002", "sales": 9240.0, "units": 7}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-002", "sales": 34.95, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-024", "sales": 23.67, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-027", "sales": 188.73000000000005, "units": 23}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-025", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL005-002", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL008-002", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL008-003", "sales": 9.02, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL013-002", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R786-101", "sales": 404.73, "units": 7}, {"date": "Mar 4", "dateIdx": 8, "team": "ae", "sku": "R802-004", "sales": 0.0, "units": 11}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL011-001", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-013", "sales": 185.69000000000003, "units": 31}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-014", "sales": 5.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-019", "sales": 5.87, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-029", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-030", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-204", "sales": 22.58, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-256", "sales": 233.87000000000003, "units": 13}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-400", "sales": 317.8800000000001, "units": 37}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-258", "sales": 341.81000000000006, "units": 18}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R712-031", "sales": 19.6, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-239", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-266", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-100", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R260-102", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R020-010", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R020-118", "sales": 509.83, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "vh", "sku": "R153-006", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R204-544", "sales": 29.54, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R204-509", "sales": 38.6, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R712-007", "sales": 25.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R568-002", "sales": 260.33, "units": 9}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R568-004", "sales": 199.80000000000004, "units": 20}, {"date": "Mar 4", "dateIdx": 8, "team": "ae", "sku": "R598-002", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-270", "sales": 20.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-220", "sales": 137.45, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R195-545", "sales": 7.04, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R195-527", "sales": 23.4, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-001", "sales": 36.15, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-023", "sales": 496.7999999999997, "units": 40}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-104", "sales": 196.95, "units": 36}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R152-007", "sales": 435.0, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R152-008", "sales": 2250.0, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-001", "sales": 17.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-021", "sales": 27.0, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-237", "sales": 91.56, "units": 4}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-239", "sales": 20.97, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-005", "sales": 47.96, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-013", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL001-011", "sales": 5.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R437-202", "sales": 9.49, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R303-303", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R799-002", "sales": 28.49, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL010-001", "sales": 7.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R786-107", "sales": 254.83, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-112", "sales": 9.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL007-001", "sales": 10.3, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-212", "sales": 64.91, "units": 5}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-211", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-226", "sales": 15.98, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-233", "sales": 12.98, "units": 3}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-002", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-006", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R806-009", "sales": 5.95, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R152-012", "sales": 480.0, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-275", "sales": 23.59, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-255-1", "sales": 449.7500000000001, "units": 25}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-257", "sales": 16.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-248", "sales": 9.72, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-245", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-246", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R695-235", "sales": 16.41, "units": 2}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R163-131", "sales": 21.68, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "rb", "sku": "R163-142", "sales": 0.0, "units": 0}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "PL002-003", "sales": 17.99, "units": 1}, {"date": "Mar 4", "dateIdx": 8, "team": "sf", "sku": "R059-286", "sales": 19.81, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-049", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-044", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-080", "sales": 174.86, "units": 7}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-167", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-118", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-154", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-177", "sales": 39.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-206", "sales": 55.8, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R106-011", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R106-018", "sales": 18.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R106-018", "sales": 20.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "vh", "sku": "R153-005", "sales": 519.87, "units": 9}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R228-007", "sales": 1461.3300000000006, "units": 95}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-004", "sales": 81.87, "units": 3}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R580-001", "sales": 181.86000000000004, "units": 10}, {"date": "Mar 5", "dateIdx": 9, "team": "ae", "sku": "R630-007", "sales": 15.94, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R243-100", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R243-103", "sales": 19.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R580-007", "sales": 294.95, "units": 3}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-003", "sales": 35.98, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-005", "sales": 24.9, "units": 3}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-011", "sales": 143.84, "units": 10}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-012", "sales": 41.25, "units": 5}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-100", "sales": 727.4800000000004, "units": 52}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-006", "sales": 13.98, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-029", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-012", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R762-001", "sales": 21564.61, "units": 47}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-040", "sales": 15.94, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R303-309", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-014", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL005-003", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-100", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL008-001", "sales": 12.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-213", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-125", "sales": 356.8500000000001, "units": 39}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-003", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-010", "sales": 5.95, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-015", "sales": 11.98, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R437-205", "sales": 106.7, "units": 9}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R339-029", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R339-029", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-016", "sales": 33.96, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL016-001", "sales": 20.3, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-214", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-219", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-251", "sales": 9.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-252", "sales": 9.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-402", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-109", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-112", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-114", "sales": 69.95, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-327", "sales": 31.85, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-098", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-164", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-113", "sales": 211.0, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-005", "sales": 162.33, "units": 7}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R437-006", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R541-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R568-001", "sales": 159.92, "units": 8}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R580-008", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R580-003", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R295-106", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "vh", "sku": "R153-007-stickerless", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "vh", "sku": "R153-007-stickerless", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R541-124", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-006", "sales": 9.3, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-015", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R401-112", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-482", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-227", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R152-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R152-006", "sales": 960.0, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-024", "sales": 55.23, "units": 7}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-027", "sales": 195.72000000000003, "units": 22}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-027", "sales": 195.72000000000003, "units": 22}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-025", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-042", "sales": 8.29, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL005-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL008-003", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-263", "sales": 29.29, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-260", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL010-002", "sales": 11.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL013-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R786-101", "sales": 14.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R786-105", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "ae", "sku": "R802-004", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-013", "sales": 23.96, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-014", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-019", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-023", "sales": 5.95, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-029", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R437-204", "sales": 9.0, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-256", "sales": 233.87000000000003, "units": 14}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-400", "sales": 123.30999999999996, "units": 19}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-258", "sales": 89.58999999999999, "units": 5}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-031", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-100", "sales": 106.0, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-102", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R163-140", "sales": 30.56, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R020-118", "sales": 299.9, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-022", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-122", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-020", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R163-021", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R204-544", "sales": 39.33, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R204-509", "sales": 71.46000000000001, "units": 3}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-101", "sales": 106.0, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-007", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R568-002", "sales": 117.18, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R568-004", "sales": 109.68999999999998, "units": 11}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-270", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-220", "sales": 27.49, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R195-545", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R195-527", "sales": 7.8, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-001", "sales": 21.72, "units": 6}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-023", "sales": 395.5999999999997, "units": 41}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R437-104", "sales": 160.10000000000008, "units": 29}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R152-007", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R152-008", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-001", "sales": 17.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-021", "sales": 18.0, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-237", "sales": 68.67, "units": 3}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-239", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-005", "sales": 47.96, "units": 4}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL001-011", "sales": 5.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R437-202", "sales": 9.49, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R799-002", "sales": 28.89, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL010-001", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R786-107", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-112", "sales": 19.98, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL007-001", "sales": 10.3, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-212", "sales": 25.94, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-211", "sales": 15.8, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-226", "sales": 7.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-228", "sales": 6.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-233", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-002", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-006", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R806-009", "sales": 5.95, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R152-012", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-103", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-275", "sales": 23.59, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-255-1", "sales": 17.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-257", "sales": 33.98, "units": 2}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-265", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R712-040", "sales": 7.99, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-223", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-248", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-246", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R695-235", "sales": 8.24, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R044-430", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R260-108", "sales": 519.0, "units": 1}, {"date": "Mar 5", "dateIdx": 9, "team": "rb", "sku": "R163-131", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "PL002-003", "sales": 0.0, "units": 0}, {"date": "Mar 5", "dateIdx": 9, "team": "sf", "sku": "R059-286", "sales": 21.99, "units": 1}];
+const ALL_SKUS = ["R762-001", "R152-002", "R339-029", "R580-008", "R228-007", "R695-023", "R580-001", "R152-008", "R752-005", "R752-114", "R243-100", "R260-112", "R695-100", "R712-004", "R106-011", "R059-080", "R695-255-1", "R695-027", "R712-005", "R695-258", "R260-109", "R712-007", "R020-118", "PL001-005", "R568-001", "R695-125", "R752-115", "R152-012", "R152-006", "R260-100", "R695-001", "R260-106", "R695-400", "R695-256", "R786-101", "R712-016", "R568-004", "R059-327", "R695-003", "R568-002", "R752-016", "R260-102", "R695-040", "R106-018", "R695-011", "R260-113", "R153-005", "R243-002", "R580-007", "R437-205", "R260-108", "R786-107", "R059-206", "R059-237", "R295-106", "R260-105", "R806-013", "R695-012", "R152-007", "R437-104", "R260-101", "R695-024", "R059-118", "PL001-012", "R243-106", "PL001-014", "R163-131", "PL001-011", "R695-112", "R059-220", "R695-211", "R153-007-stickerless", "R695-212", "R204-509", "R303-303", "R153-002", "PL001-006", "PL001-001", "R260-114", "R695-021", "R695-213", "R695-233", "R712-017", "PL002-003", "R059-164", "R695-005", "R243-103", "R695-257", "R059-202", "R059-260", "R799-002", "R059-044", "R695-017", "R695-235", "R059-286", "R059-177", "R695-248", "R059-275", "R204-544", "R059-263", "R580-003", "R806-015", "R243-107", "R106-004", "PL005-003", "R695-029", "R059-240", "R541-121", "R712-031", "PL008-002", "R695-226", "R695-025", "R163-142", "R695-252", "PL010-002", "R153-006", "R598-002", "R303-340", "R243-001", "R806-014", "PL016-001", "R059-154", "R437-204", "PL001-002", "R802-004", "PL001-013", "R163-021", "PL005-002", "PL008-001", "R695-246", "R806-002", "R044-482", "R163-140", "R786-106", "R695-251", "R059-227", "R806-006", "R806-029", "PL007-001", "R059-259", "R695-239", "R437-202", "R695-265", "R695-228", "R195-527", "R806-019", "R437-003", "R695-015", "PL010-001", "R044-430", "R695-214", "R059-020", "R106-003", "R044-022", "R437-006", "R044-099", "R044-049", "R059-257", "R059-167", "R630-007", "R059-253", "R059-270", "R059-239", "R806-030", "PL013-002", "R806-010", "R695-007", "PL011-001", "R806-009", "PL008-003", "R806-003", "R044-098", "R695-042", "PL013-004", "R712-040", "R695-245", "R786-105", "PL005-004", "R044-103", "R020-010", "R044-402", "R044-122", "R695-223", "R195-545", "R044-403", "PL001-100", "R044-405", "R695-219", "R806-012", "R806-022", "R695-006", "R437-200", "R806-005", "R695-014", "R695-266", "R806-011", "R806-023", "R059-028", "R044-085", "R712-003", "R260-107", "FBA173HCMHY1.missing1", "R303-086-1", "R401-112", "R806-001", "R049-011", "R044-407", "R020-011", "R260-104", "R044-404", "R541-011-stickerless", "R806-016", "R695-264", "R339-028", "R295-013", "R695-249", "R267-101", "R243-102", "R152-013", "R292-101", "PL004-003", "R725-010", "R541-002", "R584-009", "R152-009", "R695-216", "R303-309", "R541-124"];
+const ALL_DATES = ['Feb 22','Feb 23','Feb 24','Feb 25','Feb 26','Mar 1','Mar 2','Mar 3','Mar 4','Mar 5'];
+const ALL_TEAMS = ['sf','rb','vh','ae'];
+
+// ── FILTER STATE ─────────────────────────────────────────────────────────────
+let activeDates = new Set(ALL_DATES);
+let activeTeams = new Set(ALL_TEAMS);
+let activeSKUs = new Set(ALL_SKUS);
+let skuSearch = '';
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+const fmt = v => '$' + v.toLocaleString('en-US', {maximumFractionDigits: 0});
+const C = {
+  accent:  '#3d6aff', accent2: '#00e5c3', accent3: '#ff6b6b', accent4: '#ffc96b',
+  sf: '#3d6aff', rb: '#00e5c3', vh: '#ffc96b', ae: '#c084fc',
+  border: '#1e2740', muted: '#5a6480', text: '#e8ecf4', bg: '#111520',
+};
+
+Chart.defaults.color = C.muted;
+Chart.defaults.borderColor = C.border;
+Chart.defaults.font.family = "'DM Mono', monospace";
+Chart.defaults.font.size = 10;
+
+const gridCfg = { color: C.border, drawBorder: false };
+const tooltipCfg = {
+  backgroundColor: '#1a2035', borderColor: C.border, borderWidth: 1,
+  titleColor: C.text, bodyColor: C.muted, padding: 10, cornerRadius: 8,
+};
+
+// ── COMPUTED DATA FROM FILTERS ────────────────────────────────────────────────
+function getFiltered() {
+  return RAW.filter(r =>
+    activeDates.has(r.date) &&
+    activeTeams.has(r.team) &&
+    activeSKUs.has(r.sku)
+  );
+}
+
+function computeMetrics(filtered) {
+  const dates = ALL_DATES.filter(d => activeDates.has(d));
+
+  const dailySales = dates.map(d => filtered.filter(r => r.date===d).reduce((s,r)=>s+r.sales,0));
+  const dailyUnits = dates.map(d => filtered.filter(r => r.date===d).reduce((s,r)=>s+r.units,0));
+
+  const teamTotals = {};
+  ALL_TEAMS.filter(t => activeTeams.has(t)).forEach(t => {
+    teamTotals[t] = dates.map(d => filtered.filter(r=>r.team===t && r.date===d).reduce((s,r)=>s+r.sales,0));
+  });
+
+  const skuTotals = {};
+  filtered.forEach(r => { skuTotals[r.sku] = (skuTotals[r.sku]||0) + r.sales; });
+  const topSKUs = Object.entries(skuTotals).sort((a,b)=>b[1]-a[1]).slice(0,10);
+
+  const grandTotal = dailySales.reduce((a,b)=>a+b,0);
+  const peakDay = Math.max(...dailySales);
+  const peakDayLabel = dates[dailySales.indexOf(peakDay)];
+  const totalUnits = dailyUnits.reduce((a,b)=>a+b,0);
+  const avgDay = grandTotal / (dates.length || 1);
+
+  return { dates, dailySales, dailyUnits, teamTotals, topSKUs, grandTotal, peakDay, peakDayLabel, totalUnits, avgDay };
+}
+
+// ── CHART INSTANCES ───────────────────────────────────────────────────────────
+let charts = {};
+
+function initCharts(m) {
+  // Destroy existing
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  // KPI cards
+  document.getElementById('kpiRevenue').textContent = fmt(m.grandTotal);
+  document.getElementById('kpiPeak').textContent = m.peakDay > 0 ? fmt(m.peakDay) + ' (' + m.peakDayLabel + ')' : '—';
+  document.getElementById('kpiUnits').textContent = m.totalUnits.toLocaleString();
+  document.getElementById('kpiAvg').textContent = fmt(m.avgDay);
+
+  // Daily Sales
+  charts.daily = new Chart(document.getElementById('dailySalesChart'), {
+    type: 'bar',
+    data: {
+      labels: m.dates,
+      datasets: [{
+        label: 'Revenue',
+        data: m.dailySales,
+        backgroundColor: m.dailySales.map(v => v > 20000 ? 'rgba(0,229,195,0.75)' : v > 10000 ? 'rgba(61,106,255,0.65)' : 'rgba(61,106,255,0.35)'),
+        borderColor: m.dailySales.map(v => v > 20000 ? C.accent2 : C.accent),
+        borderWidth: 1, borderRadius: 4, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...tooltipCfg, callbacks: { label: ctx => ' ' + fmt(ctx.raw) } } },
+      scales: {
+        x: { grid: gridCfg, ticks: { color: C.muted } },
+        y: { grid: gridCfg, ticks: { color: C.muted, callback: v => '$' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+
+  // Team donut
+  const teamKeys = ALL_TEAMS.filter(t => activeTeams.has(t));
+  const teamSumTotals = Object.fromEntries(teamKeys.map(t => [t, m.teamTotals[t].reduce((a,b)=>a+b,0)]));
+  const gt = Object.values(teamSumTotals).reduce((a,b)=>a+b,0);
+
+  charts.donut = new Chart(document.getElementById('teamDonut'), {
+    type: 'doughnut',
+    data: {
+      labels: teamKeys.map(t => t.toUpperCase()),
+      datasets: [{
+        data: teamKeys.map(t => teamSumTotals[t]),
+        backgroundColor: teamKeys.map(t => C[t]),
+        borderColor: C.bg, borderWidth: 3, hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '70%',
+      plugins: {
+        legend: { position: 'right', labels: { color: C.text, usePointStyle: true, pointStyleWidth: 8 } },
+        tooltip: { ...tooltipCfg, callbacks: { label: ctx => ' ' + ctx.label + ': ' + fmt(ctx.raw) + ' (' + (ctx.raw/(gt||1)*100).toFixed(1) + '%)' } }
+      }
+    }
+  });
+
+  // Team list bars
+  const teamListEl = document.getElementById('teamList');
+  teamListEl.innerHTML = '';
+  const maxTeam = Math.max(...Object.values(teamSumTotals), 1);
+  const teamNames = { sf:'SF', rb:'RB', vh:'VH', ae:'AE' };
+  Object.entries(teamSumTotals).sort((a,b)=>b[1]-a[1]).forEach(([key,val]) => {
+    const pct = (val/maxTeam*100).toFixed(1);
+    const share = (val/(gt||1)*100).toFixed(1);
+    teamListEl.innerHTML += `
+      <div class="team-item">
+        <div class="team-header">
+          <span class="team-name" style="color:${C[key]}">${teamNames[key]}</span>
+          <span class="team-val">${fmt(val)} <span style="color:var(--muted);font-size:10px">${share}%</span></span>
+        </div>
+        <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${C[key]};opacity:0.8"></div></div>
+      </div>`;
+  });
+
+  // Top Products
+  const prodEl = document.getElementById('topProducts');
+  prodEl.innerHTML = '';
+  const maxProd = m.topSKUs[0]?.[1] || 1;
+  m.topSKUs.forEach(([sku,val],i) => {
+    prodEl.innerHTML += `
+      <div class="product-item">
+        <span class="product-rank">${String(i+1).padStart(2,'0')}</span>
+        <div style="flex:1">
+          <div class="product-sku">${sku}</div>
+          <div class="bar-track" style="margin-top:5px">
+            <div class="bar-fill" style="width:${(val/maxProd*100).toFixed(1)}%;background:linear-gradient(90deg,${C.accent},${C.accent2});opacity:0.8"></div>
+          </div>
+        </div>
+        <span class="product-sales">${fmt(val)}</span>
+      </div>`;
+  });
+
+  // Units chart
+  charts.units = new Chart(document.getElementById('unitsChart'), {
+    type: 'line',
+    data: {
+      labels: m.dates,
+      datasets: [{
+        label: 'Units', data: m.dailyUnits,
+        borderColor: C.accent4, backgroundColor: 'rgba(255,201,107,0.08)',
+        borderWidth: 2, tension: 0.4, fill: true,
+        pointBackgroundColor: C.accent4, pointRadius: 4, pointHoverRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: { ...tooltipCfg } },
+      scales: {
+        x: { grid: gridCfg, ticks: { color: C.muted } },
+        y: { grid: gridCfg, ticks: { color: C.muted } }
+      }
+    }
+  });
+
+  // Delta charts (skipped when filters active — only available with all dates)
+  const deltaSection = document.getElementById('deltaSection');
+  if (activeDates.size === ALL_DATES.length) {
+    deltaSection.style.display = '';
+    // Recompute delta from filtered but all dates present
+    const dYday = ALL_DATES.map((d,i) => {
+      if (i===0) return 0;
+      const today = filtered.filter(r=>r.date===d).reduce((s,r)=>s+r.sales,0);
+      const yest = filtered.filter(r=>r.date===ALL_DATES[i-1]).reduce((s,r)=>s+r.sales,0);
+      return today - yest;
+    }).slice(1);
+    const dWeek = ALL_DATES.slice(1).map((d,i) => {
+      // approximation: compare vs 7 days prior in full dataset
+      const today = RAW.filter(r=>r.date===d && activeTeams.has(r.team) && activeSKUs.has(r.sku)).reduce((s,r)=>s+r.sales,0);
+      const wkIdx = i - 7;
+      if (wkIdx < 0) return 0;
+      const week = RAW.filter(r=>r.date===ALL_DATES[wkIdx] && activeTeams.has(r.team) && activeSKUs.has(r.sku)).reduce((s,r)=>s+r.sales,0);
+      return today - week;
+    });
+    makeDeltaChart('deltaYdayChart', ALL_DATES.slice(1), dYday);
+    makeDeltaChart('deltaWeekChart', ALL_DATES.slice(1), dWeek);
+  } else {
+    deltaSection.style.display = 'none';
+  }
+
+  // Stacked team chart
+  charts.stack = new Chart(document.getElementById('teamStackChart'), {
+    type: 'bar',
+    data: {
+      labels: m.dates,
+      datasets: teamKeys.map(t => ({
+        label: t.toUpperCase(),
+        data: m.teamTotals[t],
+        backgroundColor: C[t] + 'BF',
+        borderColor: C[t], borderWidth: 0, borderRadius: 0,
+      }))
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { labels: { color: C.text, usePointStyle: true, pointStyleWidth: 8, boxHeight: 6 } },
+        tooltip: { ...tooltipCfg, callbacks: { label: ctx => ' ' + ctx.dataset.label + ': ' + fmt(ctx.raw) } }
+      },
+      scales: {
+        x: { stacked: true, grid: gridCfg, ticks: { color: C.muted } },
+        y: { stacked: true, grid: gridCfg, ticks: { color: C.muted, callback: v => '$' + (v/1000).toFixed(0) + 'k' } }
+      }
+    }
+  });
+}
+
+function makeDeltaChart(id, labels, data) {
+  if (charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Δ Sales', data,
+        backgroundColor: data.map(v => v >= 0 ? 'rgba(0,229,195,0.6)' : 'rgba(255,92,92,0.6)'),
+        borderColor: data.map(v => v >= 0 ? C.accent2 : C.accent3),
+        borderWidth: 1, borderRadius: 3, borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: { ...tooltipCfg, callbacks: { label: ctx => ' ' + (ctx.raw >= 0 ? '+' : '') + fmt(ctx.raw) } }
+      },
+      scales: {
+        x: { grid: gridCfg, ticks: { color: C.muted } },
+        y: { grid: gridCfg, ticks: { color: C.muted, callback: v => (v>=0?'+':'')+'$'+(v/1000).toFixed(0)+'k' } }
+      }
+    }
+  });
+}
+
+// ── RENDER ────────────────────────────────────────────────────────────────────
+function render() {
+  const filtered = getFiltered();
+  const m = computeMetrics(filtered);
+  initCharts(m);
+  updateFilterBadge();
+}
+
+function updateFilterBadge() {
+  const isDefault = activeDates.size === ALL_DATES.length && activeTeams.size === ALL_TEAMS.length && activeSKUs.size === ALL_SKUS.length;
+  document.getElementById('filterBadge').style.display = isDefault ? 'none' : 'inline-flex';
+  const parts = [];
+  if (activeDates.size < ALL_DATES.length) parts.push(activeDates.size + ' dates');
+  if (activeTeams.size < ALL_TEAMS.length) parts.push([...activeTeams].map(t=>t.toUpperCase()).join(', '));
+  if (activeSKUs.size < ALL_SKUS.length) parts.push(activeSKUs.size + ' SKUs');
+  document.getElementById('filterBadge').textContent = parts.join(' · ');
+}
+
+// ── FILTER PANEL ──────────────────────────────────────────────────────────────
+function buildSKUList() {
+  const search = skuSearch.toLowerCase();
+  const container = document.getElementById('skuList');
+  container.innerHTML = '';
+  const filtered = ALL_SKUS.filter(s => s.toLowerCase().includes(search));
+  filtered.slice(0, 100).forEach(sku => {
+    const active = activeSKUs.has(sku);
+    const el = document.createElement('label');
+    el.className = 'filter-check' + (active ? ' active' : '');
+    el.innerHTML = `<input type="checkbox" ${active?'checked':''} data-sku="${sku}"><span>${sku}</span>`;
+    el.querySelector('input').addEventListener('change', e => {
+      if (e.target.checked) activeSKUs.add(sku); else activeSKUs.delete(sku);
+      el.classList.toggle('active', e.target.checked);
+    });
+    container.appendChild(el);
+  });
+  if (filtered.length > 100) {
+    container.innerHTML += `<div style="color:var(--muted);font-size:10px;padding:6px 0">${filtered.length-100} more — refine search</div>`;
+  }
+}
+
+function togglePanel() {
+  const panel = document.getElementById('filterPanel');
+  panel.classList.toggle('open');
+  if (panel.classList.contains('open')) buildSKUList();
+}
+
+function applyFilters() {
+  document.getElementById('filterPanel').classList.remove('open');
+  render();
+}
+
+function resetFilters() {
+  activeDates = new Set(ALL_DATES);
+  activeTeams = new Set(ALL_TEAMS);
+  activeSKUs = new Set(ALL_SKUS);
+  skuSearch = '';
+  // Reset UI
+  document.querySelectorAll('.date-chip').forEach(c => c.classList.add('active'));
+  document.querySelectorAll('.team-chip').forEach(c => c.classList.add('active'));
+  document.getElementById('skuSearchInput').value = '';
+  buildSKUList();
+  render();
+}
+
+// Init filter UI
+document.addEventListener('DOMContentLoaded', () => {
+  // Date chips
+  const dateContainer = document.getElementById('dateChips');
+  ALL_DATES.forEach(d => {
+    const el = document.createElement('button');
+    el.className = 'date-chip active';
+    el.textContent = d;
+    el.addEventListener('click', () => {
+      el.classList.toggle('active');
+      if (activeDates.has(d)) activeDates.delete(d); else activeDates.add(d);
+    });
+    dateContainer.appendChild(el);
+  });
+
+  // All dates toggle
+  document.getElementById('allDatesBtn').addEventListener('click', () => {
+    const allActive = activeDates.size === ALL_DATES.length;
+    if (allActive) {
+      activeDates.clear();
+      document.querySelectorAll('.date-chip').forEach(c => c.classList.remove('active'));
+    } else {
+      activeDates = new Set(ALL_DATES);
+      document.querySelectorAll('.date-chip').forEach(c => c.classList.add('active'));
+    }
+  });
+
+  // Team chips
+  document.querySelectorAll('.team-chip').forEach(el => {
+    el.addEventListener('click', () => {
+      const t = el.dataset.team;
+      el.classList.toggle('active');
+      if (activeTeams.has(t)) activeTeams.delete(t); else activeTeams.add(t);
+    });
+  });
+
+  // SKU search
+  document.getElementById('skuSearchInput').addEventListener('input', e => {
+    skuSearch = e.target.value;
+    buildSKUList();
+  });
+
+  // Select/deselect all SKUs
+  document.getElementById('skuAllBtn').addEventListener('click', () => {
+    const search = skuSearch.toLowerCase();
+    const visible = ALL_SKUS.filter(s => s.toLowerCase().includes(search));
+    const allActive = visible.every(s => activeSKUs.has(s));
+    visible.forEach(s => { if (allActive) activeSKUs.delete(s); else activeSKUs.add(s); });
+    buildSKUList();
+  });
+
+  // Close panel on outside click
+  document.addEventListener('click', e => {
+    if (!document.getElementById('filterPanel').contains(e.target) && !document.getElementById('filterToggleBtn').contains(e.target)) {
+      document.getElementById('filterPanel').classList.remove('open');
+    }
+  });
+
+  render();
+});
+</script>
+</body>
+</html>
