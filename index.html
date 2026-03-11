@@ -3,483 +3,424 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Sales Comparison Dashboard</title>
+<title>Sales Dashboard</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;700;800&display=swap" rel="stylesheet"/>
 <style>
 :root{
   --bg:#070a10;--surface:#0f1420;--surface2:#161c2d;--border:#1e2640;
-  --text:#dde4f0;--muted:#4e5d7a;--today:#3ecf8e;--yd:#5b8dee;--d7:#a78bfa;
-  --neg:#f56565;--pos:#3ecf8e;--accent:#3ecf8e;
+  --text:#dde4f0;--muted:#4e5d7a;
+  --today:#3ecf8e;--yd:#5b8dee;--d7:#a78bfa;
+  --neg:#f56565;--pos:#3ecf8e;
   --mono:'DM Mono',monospace;--sans:'DM Sans',sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:14px;scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:var(--sans);min-height:100vh}
 
-/* ── Header ── */
 header{
-  background:linear-gradient(135deg,#0d1526 0%,#0a1020 100%);
+  background:linear-gradient(135deg,#0d1526,#0a1020);
   border-bottom:1px solid var(--border);
-  padding:20px 32px;
+  padding:16px 32px;
   display:flex;align-items:center;justify-content:space-between;
-  position:sticky;top:0;z-index:100;
-  backdrop-filter:blur(12px);
+  position:sticky;top:0;z-index:100;backdrop-filter:blur(12px);
 }
 .logo{display:flex;align-items:center;gap:10px}
-.logo-mark{width:32px;height:32px;border-radius:8px;
+.logo-mark{width:30px;height:30px;border-radius:8px;
   background:linear-gradient(135deg,var(--today),var(--yd));
-  display:flex;align-items:center;justify-content:center;font-size:1rem}
-.logo h1{font-size:1.1rem;font-weight:800;letter-spacing:-.02em}
-.logo h1 span{color:var(--accent)}
-.header-dates{display:flex;gap:16px;align-items:center}
-.date-pill{
-  display:flex;align-items:center;gap:6px;
-  padding:5px 12px;border-radius:20px;
-  font-family:var(--mono);font-size:.7rem;
-  border:1px solid var(--border);background:var(--surface);
-}
+  display:flex;align-items:center;justify-content:center;font-size:.9rem}
+.logo h1{font-size:1.05rem;font-weight:800;letter-spacing:-.02em}
+.logo h1 span{color:var(--today)}
+.header-right{display:flex;align-items:center;gap:16px}
+.date-pill{display:flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;
+  font-family:var(--mono);font-size:.68rem;border:1px solid var(--border);background:var(--surface)}
 .dot{width:7px;height:7px;border-radius:50%}
-.dot-today{background:var(--today);box-shadow:0 0 6px var(--today)}
-.dot-yd{background:var(--yd)}
-.dot-d7{background:var(--d7)}
+.dot-t{background:var(--today);box-shadow:0 0 6px var(--today)}
+.dot-y{background:var(--yd)}
+.dot-7{background:var(--d7)}
 
-/* ── Layout ── */
-main{max-width:1440px;margin:0 auto;padding:28px 28px 60px}
-.section{margin-bottom:28px}
-.section-title{font-size:.65rem;font-weight:700;letter-spacing:.14em;
-  text-transform:uppercase;color:var(--muted);margin-bottom:14px}
-
-/* ── KPI row ── */
-.kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:14px}
-.kpi-card{
-  background:var(--surface);border:1px solid var(--border);
-  border-radius:12px;padding:18px 20px;position:relative;overflow:hidden;
-  transition:border-color .2s;
+/* ── Currency filter tabs ── */
+.curr-tabs{display:flex;gap:6px;align-items:center}
+.curr-tab{
+  padding:5px 14px;border-radius:20px;border:1px solid var(--border);
+  background:transparent;color:var(--muted);font-family:var(--mono);
+  font-size:.7rem;cursor:pointer;transition:all .18s;white-space:nowrap;
 }
+.curr-tab:hover{border-color:#2e3a55;color:var(--text)}
+.curr-tab.active{background:var(--today);border-color:var(--today);color:#070a10;font-weight:700}
+
+main{max-width:1440px;margin:0 auto;padding:24px 26px 60px}
+.section{margin-bottom:22px}
+.sec-title{font-size:.62rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
+  color:var(--muted);margin-bottom:12px}
+
+/* KPI */
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 18px;position:relative;overflow:hidden;transition:border-color .2s}
 .kpi-card:hover{border-color:#2e3a55}
-.kpi-card::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:var(--line-color,var(--today));
-}
-.kpi-label{font-family:var(--mono);font-size:.65rem;color:var(--muted);
+.kpi-card::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--lc,var(--today))}
+.kpi-label{font-family:var(--mono);font-size:.62rem;color:var(--muted);
   text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
-.kpi-value{font-size:1.6rem;font-weight:800;line-height:1;letter-spacing:-.03em}
-.kpi-sub{font-family:var(--mono);font-size:.65rem;margin-top:6px}
-.kpi-sub.pos{color:var(--pos)}
-.kpi-sub.neg{color:var(--neg)}
-.kpi-sub.neutral{color:var(--muted)}
+.kpi-val{font-size:1.45rem;font-weight:800;line-height:1;letter-spacing:-.03em}
+.kpi-sub{font-family:var(--mono);font-size:.62rem;margin-top:5px}
+.kpi-sub.pos{color:var(--pos)}.kpi-sub.neg{color:var(--neg)}.kpi-sub.neu{color:var(--muted)}
 
-/* ── Summary bar ── */
-.summary-bar{
-  background:var(--surface);border:1px solid var(--border);border-radius:12px;
-  padding:18px 24px;display:flex;align-items:center;gap:0;
-}
-.bar-segment{flex:1;text-align:center;position:relative}
-.bar-segment+.bar-segment::before{
-  content:'';position:absolute;left:0;top:10%;height:80%;
-  width:1px;background:var(--border);
-}
-.bar-seg-label{font-family:var(--mono);font-size:.63rem;color:var(--muted);
-  text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
-.bar-seg-value{font-size:1.25rem;font-weight:700}
-.bar-seg-value.today-color{color:var(--today)}
-.bar-seg-value.yd-color{color:var(--yd)}
-.bar-seg-value.d7-color{color:var(--d7)}
-.bar-seg-pct{font-family:var(--mono);font-size:.68rem;margin-top:3px}
+/* Summary bar */
+.sum-bar{background:var(--surface);border:1px solid var(--border);border-radius:12px;
+  padding:16px 24px;display:flex}
+.bar-seg{flex:1;text-align:center;position:relative}
+.bar-seg+.bar-seg::before{content:'';position:absolute;left:0;top:10%;height:80%;width:1px;background:var(--border)}
+.bs-label{font-family:var(--mono);font-size:.6rem;color:var(--muted);
+  text-transform:uppercase;letter-spacing:.1em;margin-bottom:5px}
+.bs-val{font-size:1.15rem;font-weight:700}
+.bs-pct{font-family:var(--mono);font-size:.62rem;color:var(--muted);margin-top:3px}
 
-/* ── Charts grid ── */
-.charts-row{display:grid;gap:16px;margin-bottom:16px}
-.charts-row-2{grid-template-columns:2fr 1fr}
-.charts-row-3{grid-template-columns:1fr 1fr 1fr}
-.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px}
-.card h2{font-size:.82rem;font-weight:700;margin-bottom:16px;
-  display:flex;align-items:center;gap:8px}
-.card h2 span{color:var(--accent)}
-.chart-wrap{position:relative}
+/* Charts */
+.charts-row{display:grid;gap:14px;margin-bottom:14px}
+.cols-2{grid-template-columns:1fr 1fr}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px}
+.card h2{font-size:.8rem;font-weight:700;margin-bottom:14px}
+.card h2 span{color:var(--today)}
+.cw{position:relative}
 canvas{width:100%!important}
-
-/* ── Legend pills ── */
-.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
-.leg{display:flex;align-items:center;gap:5px;
-  font-family:var(--mono);font-size:.65rem;color:var(--muted)}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px}
+.leg{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:.62rem;color:var(--muted)}
 .leg-dot{width:8px;height:8px;border-radius:50%}
 
-/* ── Table ── */
-.table-controls{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
-.t-input{
-  background:var(--surface2);border:1px solid var(--border);color:var(--text);
-  padding:7px 14px;border-radius:8px;font-size:.78rem;font-family:var(--mono);
-  outline:none;transition:border .2s;
-}
-.t-input:focus{border-color:var(--accent)}
-.t-input::placeholder{color:var(--muted)}
-.t-select{min-width:110px}
-.row-info{font-family:var(--mono);font-size:.68rem;color:var(--muted);
-  margin-left:auto;align-self:center}
-.tbl-wrap{overflow-x:auto;max-height:520px;overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:.75rem}
+/* Table */
+.tbl-controls{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.ti{background:var(--surface2);border:1px solid var(--border);color:var(--text);
+  padding:6px 13px;border-radius:8px;font-size:.76rem;font-family:var(--mono);
+  outline:none;transition:border .2s}
+.ti:focus{border-color:var(--today)}
+.ti::placeholder{color:var(--muted)}
+.ri{font-family:var(--mono);font-size:.65rem;color:var(--muted);margin-left:auto}
+.tw{overflow-x:auto;max-height:520px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:.74rem}
 thead tr{background:var(--bg);position:sticky;top:0;z-index:2}
-thead th{
-  padding:9px 12px;text-align:left;color:var(--muted);
-  font-family:var(--mono);font-size:.62rem;text-transform:uppercase;
-  letter-spacing:.08em;border-bottom:1px solid var(--border);
-  cursor:pointer;user-select:none;white-space:nowrap;
-}
-thead th:hover{color:var(--accent)}
-thead th.asc::after{content:' ▲';color:var(--accent)}
-thead th.desc::after{content:' ▼';color:var(--accent)}
+thead th{padding:8px 11px;text-align:left;color:var(--muted);font-family:var(--mono);
+  font-size:.6rem;text-transform:uppercase;letter-spacing:.08em;
+  border-bottom:1px solid var(--border);cursor:pointer;user-select:none;white-space:nowrap}
+thead th:hover{color:var(--today)}
+thead th.asc::after{content:' ▲';color:var(--today)}
+thead th.desc::after{content:' ▼';color:var(--today)}
 tbody tr{border-bottom:1px solid #131825;transition:background .12s}
 tbody tr:hover{background:var(--surface2)}
-tbody td{padding:8px 12px;white-space:nowrap}
+tbody td{padding:7px 11px;white-space:nowrap}
+.r{text-align:right}
 .mono{font-family:var(--mono)}
-.pos-cell{color:var(--pos)!important;font-weight:600}
-.neg-cell{color:var(--neg)!important;font-weight:600}
-.zero-cell{color:var(--muted)!important}
+.pc{color:var(--pos)!important;font-weight:600}
+.nc{color:var(--neg)!important;font-weight:600}
+.zc{color:var(--muted)!important}
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;
-  font-family:var(--mono);font-size:.62rem;font-weight:600}
+  font-family:var(--mono);font-size:.6rem;font-weight:600}
 .b-usd{background:#3ecf8e18;color:#3ecf8e}
 .b-cad{background:#f9a82518;color:#f9a825}
 .b-mxn{background:#a78bfa18;color:#a78bfa}
-.b-rb{background:#5b8dee18;color:#5b8dee}
-.b-sf{background:#3ecf8e18;color:#3ecf8e}
-.b-vh{background:#fb923c18;color:#fb923c}
-.b-ae{background:#f56565;color:#fff}
-
-/* col align */
-.r{text-align:right}
+.b-brl{background:#fb923c18;color:#fb923c}
 
 @media(max-width:1100px){
   .kpi-grid{grid-template-columns:repeat(3,1fr)}
-  .charts-row-2{grid-template-columns:1fr}
-  .charts-row-3{grid-template-columns:1fr 1fr}
+  .cols-2{grid-template-columns:1fr}
 }
 @media(max-width:700px){
   .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .charts-row-3{grid-template-columns:1fr}
+  .header-right{flex-wrap:wrap;gap:8px}
 }
 </style>
 </head>
 <body>
-
 <header>
   <div class="logo">
     <div class="logo-mark">📊</div>
-    <h1>Sales <span>Comparison</span> Dashboard</h1>
+    <h1>Sales <span>Dashboard (orders with "Shipped" status only)</span></h1>
   </div>
-  <div class="header-dates" id="headerDates"></div>
+  <div class="header-right">
+    <div class="curr-tabs" id="currTabs"></div>
+    <div style="display:flex;gap:10px" id="hDates"></div>
+  </div>
 </header>
 
 <main>
+  <div class="section"><div class="sec-title">Key Metrics</div><div class="kpi-grid" id="kpiGrid"></div></div>
 
-  <!-- KPI -->
-  <div class="section">
-    <div class="section-title">Summary KPIs</div>
-    <div class="kpi-grid" id="kpiGrid"></div>
+  <!-- Top 20 SKU — full width -->
+  <div class="section card">
+    <h2>Top 20 SKU — <span>Revenue: Today vs Yesterday vs 7d Ago</span></h2>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--today)"></div>Today</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--yd)"></div>Yesterday</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--d7)"></div>7d Ago</div>
+    </div>
+    <div class="cw" style="height:360px"><canvas id="cTop"></canvas></div>
   </div>
 
-  <!-- Revenue total comparison bar -->
-  <div class="section">
-    <div class="summary-bar" id="summaryBar"></div>
-  </div>
-
-  <!-- Charts row 1: Top ASINs full width -->
-  <div class="section">
+  <!-- Row: movers + donut -->
+  <div class="charts-row cols-2 section">
     <div class="card">
-      <h2>Top 20 ASINs by Revenue — <span>Today vs Yesterday vs 7d Ago</span></h2>
-      <div class="legend">
-        <div class="leg"><div class="leg-dot" style="background:var(--today)"></div>Today</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--yd)"></div>Yesterday</div>
-        <div class="leg"><div class="leg-dot" style="background:var(--d7)"></div>7d Ago</div>
-      </div>
-      <div class="chart-wrap" style="height:380px"><canvas id="chartTop"></canvas></div>
-    </div>
-  </div>
-
-  <!-- Charts row 2: team + currency + waterfall -->
-  <div class="charts-row charts-row-3 section">
-    <div class="card">
-      <h2>Revenue by <span>Team</span></h2>
-      <div class="chart-wrap" style="height:260px"><canvas id="chartTeam"></canvas></div>
+      <h2>Biggest Movers vs <span>Yesterday</span> (by SKU)</h2>
+      <div class="cw" style="height:280px"><canvas id="cWF"></canvas></div>
     </div>
     <div class="card">
-      <h2>Revenue by <span>Currency</span></h2>
-      <div class="chart-wrap" style="height:260px"><canvas id="chartCurr"></canvas></div>
-    </div>
-    <div class="card">
-      <h2>Biggest Movers vs <span>Yesterday</span></h2>
-      <div class="chart-wrap" style="height:260px"><canvas id="chartWF"></canvas></div>
+      <h2>Revenue Share by <span>Currency</span> — Today</h2>
+      <div class="cw" style="height:280px"><canvas id="cCurr"></canvas></div>
     </div>
   </div>
 
   <!-- Table -->
-  <div class="section">
-    <div class="card">
-      <h2>All ASINs — <span>Detailed View</span></h2>
-      <div class="table-controls">
-        <input class="t-input" id="tSearch" type="text" placeholder="Search ASIN / SKU…"/>
-        <select class="t-input t-select" id="tTeam">
-          <option value="">All Teams</option>
-          <option>RB</option><option>SF</option><option>VH</option><option>AE</option>
-        </select>
-        <select class="t-input t-select" id="tCurr">
-          <option value="">All Currencies</option>
-          <option>USD</option><option>CAD</option><option>MXN</option>
-        </select>
-        <span class="row-info" id="rowInfo"></span>
-      </div>
-      <div class="tbl-wrap">
-        <table id="mainTable">
-          <thead>
-            <tr>
-              <th data-k="asin">ASIN</th>
-              <th data-k="sku">SKU</th>
-              <th data-k="team">Team</th>
-              <th data-k="curr">Curr</th>
-              <th data-k="qty_today" class="r">Units Today</th>
-              <th data-k="today"  class="r">Rev Today</th>
-              <th data-k="yd"     class="r">Rev Yesterday</th>
-              <th data-k="d7"     class="r">Rev 7d Ago</th>
-              <th data-k="d_yd"   class="r">Δ vs Yday</th>
-              <th data-k="d_7d"   class="r">Δ vs 7d</th>
-            </tr>
-          </thead>
-          <tbody id="tBody"></tbody>
-        </table>
-      </div>
+  <div class="section card">
+    <h2>All SKUs — <span>Detailed View</span></h2>
+    <div class="tbl-controls">
+      <input class="ti" id="tS" type="text" placeholder="Search SKU / ASIN…" style="width:220px"/>
+      <span class="ri" id="rInfo"></span>
+    </div>
+    <div class="tw">
+      <table id="mainTbl">
+        <thead><tr>
+          <th data-k="sku">SKU</th>
+          <th data-k="asin">ASIN</th>
+          <th data-k="curr">Currency</th>
+          <th data-k="qty_today" class="r">Units Today</th>
+          <th data-k="today"  class="r">Rev Today</th>
+          <th data-k="yd"     class="r">Rev Yesterday</th>
+          <th data-k="d7"     class="r">Rev 7d Ago</th>
+          <th data-k="d_yd"   class="r">Δ vs Yesterday</th>
+          <th data-k="d_7d"   class="r">Δ vs 7d Ago</th>
+        </tr></thead>
+        <tbody id="tBody"></tbody>
+      </table>
     </div>
   </div>
-
 </main>
 
 <script>
-const DATA = {"labels": {"today": "10.03.2026", "yd": "09.03.2026", "d7": "03.03.2026"}, "kpi": {"rev_today": 27787.88, "rev_yd": 9795.37, "rev_7d": 10088.99, "units_today": 460, "delta_yd": 17992.51, "delta_7d": 17698.89, "delta_yd_pct": 183.7, "delta_7d_pct": 175.4}, "top_asins": [{"asin": "B07FDHL85K", "sku": "R152-013", "team": "rb", "today": 4800.0, "yd": 0.0, "d7": 0.0}, {"asin": "B07885RDHK", "sku": "R152-006", "team": "rb", "today": 3837.96, "yd": 0.0, "d7": 0.0}, {"asin": "B07FCZ6YRN", "sku": "R152-008", "team": "rb", "today": 3375.0, "yd": 0.0, "d7": 899.0}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "team": "sf", "today": 1353.84, "yd": 455.02, "d7": 0.0}, {"asin": "B08T6G79MX", "sku": "R303-086-1", "team": "sf", "today": 1105.0, "yd": 0.0, "d7": 0.0}, {"asin": "B079TGPFKT", "sku": "R152-010", "team": "rb", "today": 970.0, "yd": 0.0, "d7": 0.0}, {"asin": "B0D4ZH6551", "sku": "R695-100", "team": "rb", "today": 853.39, "yd": 503.64, "d7": 349.75}, {"asin": "B0BN21982X", "sku": "R786-106", "team": "rb", "today": 750.12, "yd": 0.0, "d7": 0.0}, {"asin": "B0BSH5K5H4", "sku": "R260-109", "team": "sf", "today": 671.3, "yd": 0.0, "d7": 0.0}, {"asin": "B019YHE0NM", "sku": "R152-009", "team": "rb", "today": 665.0, "yd": 0.0, "d7": 0.0}, {"asin": "B0198VI55S", "sku": "R059-202", "team": "sf", "today": 640.6, "yd": 0.0, "d7": 0.0}, {"asin": "B0DHVYW863", "sku": "R303-310", "team": "sf", "today": 636.16, "yd": 0.0, "d7": 0.0}, {"asin": "B09FVB3NHV", "sku": "R799-002", "team": "sf", "today": 601.99, "yd": 0.0, "d7": 597.7}, {"asin": "B01GWAISTG", "sku": "R059-118", "team": "sf", "today": 545.72, "yd": 545.72, "d7": 1091.44}, {"asin": "B00JGZCGRA", "sku": "R152-012", "team": "rb", "today": 480.0, "yd": 0.0, "d7": 0.0}, {"asin": "B00FJJ2R9O", "sku": "R153-006", "team": "vh", "today": 373.49, "yd": 41.19, "d7": 0.0}, {"asin": "B07FKTH136", "sku": "R260-104", "team": "sf", "today": 360.64, "yd": 0.0, "d7": 0.0}, {"asin": "B078SM858G", "sku": "R153-005", "team": "vh", "today": 316.72, "yd": 399.9, "d7": 0.0}, {"asin": "B07417C5D1", "sku": "R568-001", "team": "sf", "today": 299.45, "yd": 238.28, "d7": 19.99}, {"asin": "B08M6FYYFT", "sku": "R153-007-stickerless", "team": "vh", "today": 290.43, "yd": 41.49, "d7": 41.49}], "teams": [{"team": "AE", "today": 0.0, "yd": 0.0, "d7": 80.0}, {"team": "RB", "today": 18562.31, "yd": 3379.19, "d7": 5143.34}, {"team": "SF", "today": 8197.9, "yd": 5122.46, "d7": 4824.16}, {"team": "VH", "today": 1027.67, "yd": 1293.72, "d7": 41.49}], "currencies": [{"curr": "CAD", "today": 681.81, "yd": 99.75, "d7": 47.06}, {"curr": "MXN", "today": 3892.27, "yd": 1811.88, "d7": 2038.84}, {"curr": "USD", "today": 23213.8, "yd": 7883.74, "d7": 8003.09}], "waterfall": [{"asin": "B07FDHL85K", "today": 4800.0, "yd": 0.0, "delta": 4800.0}, {"asin": "B07885RDHK", "today": 3837.96, "yd": 0.0, "delta": 3837.96}, {"asin": "B07FCZ6YRN", "today": 3375.0, "yd": 0.0, "delta": 3375.0}, {"asin": "B07FKWPHZF", "today": 0.0, "yd": 1114.0, "delta": -1114.0}, {"asin": "B08T6G79MX", "today": 1105.0, "yd": 0.0, "delta": 1105.0}, {"asin": "B079TGPFKT", "today": 970.0, "yd": 0.0, "delta": 970.0}, {"asin": "B08H1NQCGJ", "today": 1353.84, "yd": 455.02, "delta": 898.82}, {"asin": "B08M6FYYFT", "today": 0.0, "yd": 811.14, "delta": -811.14}, {"asin": "B0BN21982X", "today": 750.12, "yd": 0.0, "delta": 750.12}, {"asin": "B09N3CJNCB", "today": 0.0, "yd": 699.98, "delta": -699.98}], "table": [{"asin": "B07FDHL85K", "sku": "R152-013", "team": "rb", "curr": "USD", "qty_today": 4, "today": 4800.0, "yd": 0.0, "d7": 0.0, "d_yd": 4800.0, "d_7d": 4800.0}, {"asin": "B07885RDHK", "sku": "R152-006", "team": "rb", "curr": "USD", "qty_today": 2, "today": 3837.96, "yd": 0.0, "d7": 0.0, "d_yd": 3837.96, "d_7d": 3837.96}, {"asin": "B07FCZ6YRN", "sku": "R152-008", "team": "rb", "curr": "USD", "qty_today": 3, "today": 3375.0, "yd": 0.0, "d7": 899.0, "d_yd": 3375.0, "d_7d": 2476.0}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "team": "sf", "curr": "MXN", "qty_today": 3, "today": 1353.84, "yd": 455.02, "d7": 0.0, "d_yd": 898.82, "d_7d": 1353.84}, {"asin": "B08T6G79MX", "sku": "R303-086-1", "team": "sf", "curr": "USD", "qty_today": 4, "today": 1105.0, "yd": 0.0, "d7": 0.0, "d_yd": 1105.0, "d_7d": 1105.0}, {"asin": "B079TGPFKT", "sku": "R152-010", "team": "rb", "curr": "USD", "qty_today": 1, "today": 970.0, "yd": 0.0, "d7": 0.0, "d_yd": 970.0, "d_7d": 970.0}, {"asin": "B0D4ZH6551", "sku": "R695-100", "team": "rb", "curr": "USD", "qty_today": 57, "today": 853.39, "yd": 503.64, "d7": 349.75, "d_yd": 349.75, "d_7d": 503.64}, {"asin": "B0BN21982X", "sku": "R786-106", "team": "rb", "curr": "MXN", "qty_today": 2, "today": 750.12, "yd": 0.0, "d7": 0.0, "d_yd": 750.12, "d_7d": 750.12}, {"asin": "B0BSH5K5H4", "sku": "R260-109", "team": "sf", "curr": "USD", "qty_today": 1, "today": 671.3, "yd": 0.0, "d7": 0.0, "d_yd": 671.3, "d_7d": 671.3}, {"asin": "B019YHE0NM", "sku": "R152-009", "team": "rb", "curr": "USD", "qty_today": 1, "today": 665.0, "yd": 0.0, "d7": 0.0, "d_yd": 665.0, "d_7d": 665.0}, {"asin": "B0198VI55S", "sku": "R059-202", "team": "sf", "curr": "MXN", "qty_today": 1, "today": 640.6, "yd": 0.0, "d7": 0.0, "d_yd": 640.6, "d_7d": 640.6}, {"asin": "B0DHVYW863", "sku": "R303-310", "team": "sf", "curr": "CAD", "qty_today": 2, "today": 636.16, "yd": 0.0, "d7": 0.0, "d_yd": 636.16, "d_7d": 636.16}, {"asin": "B09FVB3NHV", "sku": "R799-002", "team": "sf", "curr": "MXN", "qty_today": 1, "today": 601.99, "yd": 0.0, "d7": 597.7, "d_yd": 601.99, "d_7d": 4.29}, {"asin": "B01GWAISTG", "sku": "R059-118", "team": "sf", "curr": "MXN", "qty_today": 1, "today": 545.72, "yd": 545.72, "d7": 1091.44, "d_yd": 0.0, "d_7d": -545.72}, {"asin": "B00JGZCGRA", "sku": "R152-012", "team": "rb", "curr": "USD", "qty_today": 1, "today": 480.0, "yd": 0.0, "d7": 0.0, "d_yd": 480.0, "d_7d": 480.0}, {"asin": "B00FJJ2R9O", "sku": "R153-006", "team": "vh", "curr": "USD", "qty_today": 7, "today": 373.49, "yd": 41.19, "d7": 0.0, "d_yd": 332.3, "d_7d": 373.49}, {"asin": "B07FKTH136", "sku": "R260-104", "team": "sf", "curr": "USD", "qty_today": 1, "today": 360.64, "yd": 0.0, "d7": 0.0, "d_yd": 360.64, "d_7d": 360.64}, {"asin": "B078SM858G", "sku": "R153-005", "team": "vh", "curr": "USD", "qty_today": 6, "today": 316.72, "yd": 399.9, "d7": 0.0, "d_yd": -83.18, "d_7d": 316.72}, {"asin": "B07417C5D1", "sku": "R568-001", "team": "sf", "curr": "USD", "qty_today": 11, "today": 299.45, "yd": 238.28, "d7": 19.99, "d_yd": 61.17, "d_7d": 279.46}, {"asin": "B08M6FYYFT", "sku": "R153-007-stickerless", "team": "vh", "curr": "USD", "qty_today": 5, "today": 290.43, "yd": 41.49, "d7": 41.49, "d_yd": 248.94, "d_7d": 248.94}, {"asin": "B07NKG1SW8", "sku": "R695-125", "team": "rb", "curr": "USD", "qty_today": 40, "today": 285.48, "yd": 290.97, "d7": 176.01, "d_yd": -5.49, "d_7d": 109.47}, {"asin": "B004MHZL5Q", "sku": "R204-509", "team": "rb", "curr": "USD", "qty_today": 8, "today": 277.31, "yd": 0.0, "d7": 20.25, "d_yd": 277.31, "d_7d": 257.06}, {"asin": "B07M8LMMV6", "sku": "R228-007", "team": "rb", "curr": "USD", "qty_today": 18, "today": 249.8, "yd": 187.35, "d7": 124.9, "d_yd": 62.45, "d_7d": 124.9}, {"asin": "B06ZY328FH", "sku": "R580-001", "team": "sf", "curr": "USD", "qty_today": 11, "today": 244.47, "yd": 246.81, "d7": 636.01, "d_yd": -2.34, "d_7d": -391.54}, {"asin": "B00PV8M0W2", "sku": "R712-004", "team": "rb", "curr": "USD", "qty_today": 7, "today": 185.43, "yd": 185.43, "d7": 193.15, "d_yd": 0.0, "d_7d": -7.72}, {"asin": "B09BSMS1JN", "sku": "R303-337", "team": "sf", "curr": "USD", "qty_today": 2, "today": 181.67, "yd": 0.0, "d7": 0.0, "d_yd": 181.67, "d_7d": 181.67}, {"asin": "B089QW21W4", "sku": "R303-036", "team": "sf", "curr": "USD", "qty_today": 1, "today": 172.75, "yd": 0.0, "d7": 0.0, "d_yd": 172.75, "d_7d": 172.75}, {"asin": "B07QGF564V", "sku": "R712-005", "team": "rb", "curr": "USD", "qty_today": 7, "today": 162.33, "yd": 231.9, "d7": 71.08, "d_yd": -69.57, "d_7d": 91.25}, {"asin": "B0F7HZHZH1", "sku": "R695-211", "team": "rb", "curr": "USD", "qty_today": 10, "today": 158.66, "yd": 112.88, "d7": 63.2, "d_yd": 45.78, "d_7d": 95.46}, {"asin": "B0FFHJ4FCT", "sku": "R695-400", "team": "rb", "curr": "USD", "qty_today": 22, "today": 155.76, "yd": 175.23, "d7": 201.57, "d_yd": -19.47, "d_7d": -45.81}, {"asin": "B0F7HXZXFD", "sku": "R695-212", "team": "rb", "curr": "USD", "qty_today": 11, "today": 149.88, "yd": 324.49, "d7": 12.99, "d_yd": -174.61, "d_7d": 136.89}, {"asin": "B01LZVL5A5", "sku": "R437-104", "team": "sf", "curr": "USD", "qty_today": 21, "today": 139.0, "yd": 62.35, "d7": 72.7, "d_yd": 76.65, "d_7d": 66.3}, {"asin": "B015Q9J06Y", "sku": "R568-004", "team": "sf", "curr": "USD", "qty_today": 13, "today": 129.87, "yd": 209.79, "d7": 179.82, "d_yd": -79.92, "d_7d": -49.95}, {"asin": "B078J1K4XG", "sku": "R059-080", "team": "sf", "curr": "USD", "qty_today": 6, "today": 118.74, "yd": 219.34, "d7": 49.96, "d_yd": -100.6, "d_7d": 68.78}, {"asin": "B0FJMNM9Z6", "sku": "R695-258", "team": "rb", "curr": "USD", "qty_today": 6, "today": 107.94, "yd": 161.91, "d7": 593.67, "d_yd": -53.97, "d_7d": -485.73}, {"asin": "B09W44GW6W", "sku": "R695-003", "team": "rb", "curr": "USD", "qty_today": 6, "today": 107.94, "yd": 125.93, "d7": 35.98, "d_yd": -17.99, "d_7d": 71.96}, {"asin": "B0FMKMS2SW", "sku": "R695-255-1", "team": "rb", "curr": "USD", "qty_today": 4, "today": 107.94, "yd": 53.97, "d7": 521.71, "d_yd": 53.97, "d_7d": -413.77}, {"asin": "B075NV78FH", "sku": "R260-100", "team": "sf", "curr": "USD", "qty_today": 1, "today": 106.0, "yd": 0.0, "d7": 209.88, "d_yd": 106.0, "d_7d": -103.88}, {"asin": "B07BFH3Z1H", "sku": "R762-001", "team": "rb", "curr": "USD", "qty_today": 4, "today": 103.56, "yd": 51.78, "d7": 103.56, "d_yd": 51.78, "d_7d": 0.0}, {"asin": "B08ZW5TXVV", "sku": "R695-024", "team": "rb", "curr": "USD", "qty_today": 10, "today": 78.9, "yd": 94.68, "d7": 55.23, "d_yd": -15.78, "d_7d": 23.67}, {"asin": "B019527TJ8", "sku": "R059-020", "team": "sf", "curr": "USD", "qty_today": 2, "today": 67.98, "yd": 0.0, "d7": 0.0, "d_yd": 67.98, "d_7d": 67.98}, {"asin": "B0C5FP8R7J", "sku": "R695-023", "team": "rb", "curr": "USD", "qty_today": 7, "today": 64.4, "yd": 64.4, "d7": 340.85, "d_yd": 0.0, "d_7d": -276.45}, {"asin": "B01GWAISTG", "sku": "R059-118", "team": "sf", "curr": "USD", "qty_today": 2, "today": 64.0, "yd": 65.4, "d7": 32.9, "d_yd": -1.4, "d_7d": 31.1}, {"asin": "B077HWVNFP", "sku": "R568-002", "team": "sf", "curr": "USD", "qty_today": 2, "today": 63.7, "yd": 30.12, "d7": 173.94, "d_yd": 33.58, "d_7d": -110.24}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "team": "sf", "curr": "USD", "qty_today": 3, "today": 59.97, "yd": 0.0, "d7": 39.98, "d_yd": 59.97, "d_7d": 19.99}, {"asin": "B07KGGPCZ2", "sku": "R786-101", "team": "rb", "curr": "USD", "qty_today": 4, "today": 59.96, "yd": 74.95, "d7": 14.99, "d_yd": -14.99, "d_7d": 44.97}, {"asin": "B08N4N97DZ", "sku": "R695-001", "team": "rb", "curr": "USD", "qty_today": 8, "today": 56.22, "yd": 21.87, "d7": 51.03, "d_yd": 34.35, "d_7d": 5.19}, {"asin": "B0C2FDB97J", "sku": "R695-021", "team": "rb", "curr": "USD", "qty_today": 6, "today": 54.0, "yd": 9.0, "d7": 36.0, "d_yd": 45.0, "d_7d": 18.0}, {"asin": "B0CNVZWF2L", "sku": "R695-112", "team": "rb", "curr": "USD", "qty_today": 5, "today": 49.95, "yd": 29.97, "d7": 29.97, "d_yd": 19.98, "d_7d": 19.98}, {"asin": "B088PNBKTR", "sku": "R695-012", "team": "rb", "curr": "USD", "qty_today": 6, "today": 49.5, "yd": 90.75, "d7": 49.5, "d_yd": -41.25, "d_7d": 0.0}, {"asin": "B0188ICJWC", "sku": "R153-002", "team": "vh", "curr": "USD", "qty_today": 1, "today": 47.03, "yd": 0.0, "d7": 0.0, "d_yd": 47.03, "d_7d": 47.03}, {"asin": "B07Y6S6C9F", "sku": "R059-263", "team": "sf", "curr": "CAD", "qty_today": 1, "today": 45.65, "yd": 0.0, "d7": 47.06, "d_yd": 45.65, "d_7d": -1.41}, {"asin": "B00A6VUPEO", "sku": "R712-016", "team": "rb", "curr": "USD", "qty_today": 5, "today": 42.28, "yd": 144.33, "d7": 328.93, "d_yd": -102.05, "d_7d": -286.65}, {"asin": "B00M777UUW", "sku": "R437-205", "team": "sf", "curr": "USD", "qty_today": 4, "today": 38.8, "yd": 9.7, "d7": 39.16, "d_yd": 29.1, "d_7d": -0.36}, {"asin": "B004I07MFO", "sku": "R437-202", "team": "sf", "curr": "USD", "qty_today": 4, "today": 37.96, "yd": 28.47, "d7": 9.49, "d_yd": 9.49, "d_7d": 28.47}, {"asin": "B0CPJPGNVB", "sku": "PL001-001", "team": "sf", "curr": "USD", "qty_today": 2, "today": 35.98, "yd": 53.97, "d7": 0.0, "d_yd": -17.99, "d_7d": 35.98}, {"asin": "B0GFF8YPFJ", "sku": "PL002-003", "team": "sf", "curr": "USD", "qty_today": 2, "today": 35.98, "yd": 0.0, "d7": 0.0, "d_yd": 35.98, "d_7d": 35.98}, {"asin": "B0725JT16D", "sku": "R580-008", "team": "sf", "curr": "USD", "qty_today": 3, "today": 35.37, "yd": 0.0, "d7": 400.86, "d_yd": 35.37, "d_7d": -365.49}, {"asin": "B01N6U8K37", "sku": "R059-177", "team": "sf", "curr": "USD", "qty_today": 1, "today": 34.99, "yd": 0.0, "d7": 0.0, "d_yd": 34.99, "d_7d": 34.99}, {"asin": "B088PN91KK", "sku": "R695-228", "team": "rb", "curr": "USD", "qty_today": 5, "today": 34.95, "yd": 6.99, "d7": 0.0, "d_yd": 27.96, "d_7d": 34.95}, {"asin": "B0FH2T1JBH", "sku": "PL016-001", "team": "sf", "curr": "USD", "qty_today": 3, "today": 30.45, "yd": 10.15, "d7": 0.0, "d_yd": 20.3, "d_7d": 30.45}, {"asin": "B0D816LH3Z", "sku": "PL001-011", "team": "sf", "curr": "USD", "qty_today": 3, "today": 29.95, "yd": 0.0, "d7": 19.97, "d_yd": 29.95, "d_7d": 9.98}, {"asin": "B0FLDK11TQ", "sku": "PL013-004", "team": "sf", "curr": "USD", "qty_today": 2, "today": 27.96, "yd": 0.0, "d7": 7.99, "d_yd": 27.96, "d_7d": 19.97}, {"asin": "B0F7J27FP6", "sku": "R695-213", "team": "rb", "curr": "USD", "qty_today": 2, "today": 26.98, "yd": 0.0, "d7": 0.0, "d_yd": 26.98, "d_7d": 26.98}, {"asin": "B084GY6NBC", "sku": "R695-011", "team": "rb", "curr": "USD", "qty_today": 3, "today": 26.97, "yd": 8.99, "d7": 62.75, "d_yd": 17.98, "d_7d": -35.78}, {"asin": "B0CDDN93TV", "sku": "R059-240", "team": "sf", "curr": "USD", "qty_today": 1, "today": 25.2, "yd": 0.0, "d7": 0.0, "d_yd": 25.2, "d_7d": 25.2}, {"asin": "B009411R7Q", "sku": "R044-482", "team": "sf", "curr": "USD", "qty_today": 2, "today": 25.11, "yd": 0.0, "d7": 0.0, "d_yd": 25.11, "d_7d": 25.11}, {"asin": "B0D47S7KW7", "sku": "PL001-005", "team": "sf", "curr": "USD", "qty_today": 2, "today": 23.98, "yd": 0.0, "d7": 23.98, "d_yd": 23.98, "d_7d": 0.0}, {"asin": "B0DD66B2TJ", "sku": "R806-015", "team": "rb", "curr": "USD", "qty_today": 4, "today": 23.96, "yd": 17.97, "d7": 24.97, "d_yd": 5.99, "d_7d": -1.01}, {"asin": "B088PMLVMH", "sku": "R695-040", "team": "rb", "curr": "USD", "qty_today": 3, "today": 23.91, "yd": 7.97, "d7": 71.73, "d_yd": 15.94, "d_7d": -47.82}, {"asin": "B0054TB8R6", "sku": "R059-237", "team": "sf", "curr": "USD", "qty_today": 1, "today": 22.89, "yd": 159.77, "d7": 274.68, "d_yd": -136.88, "d_7d": -251.79}, {"asin": "B01M0FB8KU", "sku": "R106-004", "team": "sf", "curr": "USD", "qty_today": 1, "today": 22.15, "yd": 0.0, "d7": 0.0, "d_yd": 22.15, "d_7d": 22.15}, {"asin": "B09KMHQHKT", "sku": "R059-270", "team": "sf", "curr": "USD", "qty_today": 1, "today": 20.99, "yd": 0.0, "d7": 0.0, "d_yd": 20.99, "d_7d": 20.99}, {"asin": "B0C5FR12SJ", "sku": "R695-027", "team": "rb", "curr": "USD", "qty_today": 3, "today": 20.97, "yd": 90.87, "d7": 70.18, "d_yd": -69.9, "d_7d": -49.21}, {"asin": "B07XZG9P5Q", "sku": "R806-006", "team": "rb", "curr": "USD", "qty_today": 2, "today": 18.3, "yd": 0.0, "d7": 9.15, "d_yd": 18.3, "d_7d": 9.15}, {"asin": "B0FJMPHVKZ", "sku": "R695-256", "team": "rb", "curr": "USD", "qty_today": 1, "today": 17.99, "yd": 0.0, "d7": 179.9, "d_yd": 17.99, "d_7d": -161.91}, {"asin": "B0BN223BSG", "sku": "R786-105", "team": "rb", "curr": "USD", "qty_today": 1, "today": 14.99, "yd": 0.0, "d7": 0.0, "d_yd": 14.99, "d_7d": 14.99}, {"asin": "B077VY6XLL", "sku": "R437-209", "team": "sf", "curr": "USD", "qty_today": 1, "today": 14.97, "yd": 0.0, "d7": 0.0, "d_yd": 14.97, "d_7d": 14.97}, {"asin": "B0DXVPFNPZ", "sku": "PL004-001", "team": "sf", "curr": "USD", "qty_today": 1, "today": 14.95, "yd": 0.0, "d7": 0.0, "d_yd": 14.95, "d_7d": 14.95}, {"asin": "B0D47THGP3", "sku": "PL001-006", "team": "sf", "curr": "USD", "qty_today": 2, "today": 13.98, "yd": 0.0, "d7": 16.98, "d_yd": 13.98, "d_7d": -3.0}, {"asin": "B016CGQNMY", "sku": "R044-049", "team": "sf", "curr": "USD", "qty_today": 1, "today": 13.25, "yd": 14.89, "d7": 0.0, "d_yd": -1.64, "d_7d": 13.25}, {"asin": "B0DMWDTZT7", "sku": "PL008-001", "team": "sf", "curr": "USD", "qty_today": 1, "today": 12.99, "yd": 0.0, "d7": 0.0, "d_yd": 12.99, "d_7d": 12.99}, {"asin": "B0DJT1G2GB", "sku": "PL005-004", "team": "sf", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 11.99, "d7": 0.0, "d_yd": 0.0, "d_7d": 11.99}, {"asin": "B0F24Y8L9D", "sku": "PL010-002", "team": "sf", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0F32XZYGM", "sku": "PL005-006", "team": "sf", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0DCCJZHMV", "sku": "R806-013", "team": "rb", "curr": "USD", "qty_today": 2, "today": 11.98, "yd": 89.85, "d7": 67.9, "d_yd": -77.87, "d_7d": -55.92}, {"asin": "B01N4M4GYS", "sku": "R059-109", "team": "sf", "curr": "USD", "qty_today": 1, "today": 10.9, "yd": 0.0, "d7": 0.0, "d_yd": 10.9, "d_7d": 10.9}, {"asin": "B09FGBGKHX", "sku": "R695-239", "team": "rb", "curr": "USD", "qty_today": 1, "today": 9.99, "yd": 9.99, "d7": 19.78, "d_yd": 0.0, "d_7d": -9.79}, {"asin": "B088PM8YLJ", "sku": "R695-007", "team": "rb", "curr": "USD", "qty_today": 1, "today": 9.99, "yd": 0.0, "d7": 0.0, "d_yd": 9.99, "d_7d": 9.99}, {"asin": "B0CS1VG7CN", "sku": "R695-029", "team": "rb", "curr": "USD", "qty_today": 1, "today": 8.99, "yd": 0.0, "d7": 8.99, "d_yd": 8.99, "d_7d": 0.0}, {"asin": "B0BC6RSS1S", "sku": "R695-005", "team": "rb", "curr": "USD", "qty_today": 1, "today": 8.3, "yd": 8.3, "d7": 16.6, "d_yd": 0.0, "d_7d": -8.3}, {"asin": "B0BZWQXZGL", "sku": "R695-235", "team": "rb", "curr": "USD", "qty_today": 1, "today": 8.26, "yd": 24.62, "d7": 8.25, "d_yd": -16.36, "d_7d": 0.01}, {"asin": "B0DDFCSMXH", "sku": "R806-005", "team": "rb", "curr": "USD", "qty_today": 1, "today": 8.15, "yd": 0.0, "d7": 0.0, "d_yd": 8.15, "d_7d": 8.15}, {"asin": "B0F24X6L65", "sku": "PL010-001", "team": "sf", "curr": "USD", "qty_today": 1, "today": 7.99, "yd": 23.97, "d7": 0.0, "d_yd": -15.98, "d_7d": 7.99}, {"asin": "B0DCDF8LG2", "sku": "R806-002", "team": "rb", "curr": "USD", "qty_today": 1, "today": 7.95, "yd": 0.0, "d7": 0.0, "d_yd": 7.95, "d_7d": 7.95}, {"asin": "B08SGJSH4F", "sku": "R695-025", "team": "rb", "curr": "USD", "qty_today": 1, "today": 7.88, "yd": 0.0, "d7": 0.0, "d_yd": 7.88, "d_7d": 7.88}, {"asin": "B0F9FR129N", "sku": "R695-248", "team": "rb", "curr": "USD", "qty_today": 1, "today": 7.49, "yd": 7.49, "d7": 19.98, "d_yd": 0.0, "d_7d": -12.49}, {"asin": "B0F7XVCMDK", "sku": "R695-214", "team": "rb", "curr": "USD", "qty_today": 1, "today": 7.17, "yd": 14.34, "d7": 7.17, "d_yd": -7.17, "d_7d": 0.0}, {"asin": "B0CPJJV4S9", "sku": "PL001-002", "team": "sf", "curr": "USD", "qty_today": 1, "today": 6.99, "yd": 6.99, "d7": 8.99, "d_yd": 0.0, "d_7d": -2.0}, {"asin": "B09SPD17XJ", "sku": "R695-233", "team": "rb", "curr": "USD", "qty_today": 1, "today": 6.49, "yd": 6.49, "d7": 0.0, "d_yd": 0.0, "d_7d": 6.49}, {"asin": "B0DD5TVSM9", "sku": "R806-014", "team": "rb", "curr": "USD", "qty_today": 1, "today": 5.99, "yd": 11.98, "d7": 24.71, "d_yd": -5.99, "d_7d": -18.72}, {"asin": "B0DCDSHKF3", "sku": "R806-016", "team": "rb", "curr": "USD", "qty_today": 1, "today": 5.95, "yd": 0.0, "d7": 0.0, "d_yd": 5.95, "d_7d": 5.95}, {"asin": "B0F6V7J4FX", "sku": "PL007-001", "team": "sf", "curr": "USD", "qty_today": 1, "today": 5.15, "yd": 200.85, "d7": 10.3, "d_yd": -195.7, "d_7d": -5.15}, {"asin": "B00M777566", "sku": "R437-204", "team": "sf", "curr": "USD", "qty_today": 1, "today": 4.5, "yd": 27.0, "d7": 18.63, "d_yd": -22.5, "d_7d": -14.13}, {"asin": "B0D7Z99845", "sku": "PL001-013", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.99, "d_yd": 0.0, "d_7d": -9.99}, {"asin": "B0F9FQ9BK6", "sku": "R695-245", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.99, "d_yd": 0.0, "d_7d": -6.99}, {"asin": "B00OSBNXV0", "sku": "R044-407", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 17.63, "d7": 0.0, "d_yd": -17.63, "d_7d": 0.0}, {"asin": "B0FJMSRF8S", "sku": "R695-257", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 16.99, "d_yd": 0.0, "d_7d": -16.99}, {"asin": "B01BEVS262", "sku": "R163-142", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.57, "d_yd": 0.0, "d_7d": -20.57}, {"asin": "B00G6B4UNA", "sku": "R695-226", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.83, "d7": 0.0, "d_yd": -7.83, "d_7d": 0.0}, {"asin": "B01HDCGI4Y", "sku": "R163-131", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 21.95, "d_yd": 0.0, "d_7d": -21.95}, {"asin": "B004VRMJN4", "sku": "R201-104", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B0DCD12LBY", "sku": "R806-009", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 5.95, "d7": 0.0, "d_yd": -5.95, "d_7d": 0.0}, {"asin": "B0BN21F336", "sku": "R786-107", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 14.99, "d7": 0.0, "d_yd": -14.99, "d_7d": 0.0}, {"asin": "B09FVB3NHV", "sku": "R799-002", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 56.98, "d7": 0.0, "d_yd": -56.98, "d_7d": 0.0}, {"asin": "B0DCDCRTW6", "sku": "R806-012", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 20.78, "d7": 0.0, "d_yd": -20.78, "d_7d": 0.0}, {"asin": "B0F9FLPNV7", "sku": "R695-246", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 7.99, "d_yd": -7.99, "d_7d": -7.99}, {"asin": "B01E4P6O38", "sku": "R044-098", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 8.99, "d7": 0.0, "d_yd": -8.99, "d_7d": 0.0}, {"asin": "B0012KCVQS", "sku": "R195-527", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 23.4, "d7": 0.0, "d_yd": -23.4, "d_7d": 0.0}, {"asin": "B00BQOP3VK", "sku": "R059-154", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 24.94, "d_yd": 0.0, "d_7d": -24.94}, {"asin": "B0FNWR2D9B", "sku": "R695-266", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.49, "d_yd": 0.0, "d_7d": -6.49}, {"asin": "B08PW6ZVLK", "sku": "R712-031", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.0, "d_yd": 0.0, "d_7d": -20.0}, {"asin": "B01CILGELM", "sku": "R437-206", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 10.21, "d7": 0.0, "d_yd": -10.21, "d_7d": 0.0}, {"asin": "B0DBFQLZRG", "sku": "R806-030", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.98, "d_yd": 0.0, "d_7d": -19.98}, {"asin": "B0DBFP8FYL", "sku": "R806-029", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 0.0, "d_yd": -7.99, "d_7d": 0.0}, {"asin": "B0F1DJJP3S", "sku": "PL013-002", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 9.99, "d_yd": -9.99, "d_7d": -9.99}, {"asin": "B0DSWB562R", "sku": "PL008-003", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B0BZV65Y33", "sku": "R752-114", "team": "sf", "curr": "USD", "qty_today": 1, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B0DMWDG4VD", "sku": "PL008-002", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 15.99, "d_yd": 0.0, "d_7d": -15.99}, {"asin": "B08YT82V5X", "sku": "R401-112", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B0BC6S2DCJ", "sku": "R695-015", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.49, "d_yd": 0.0, "d_7d": -9.49}, {"asin": "B0BC2FWXSX", "sku": "R695-014", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 7.99, "d_yd": 0.0, "d_7d": -7.99}, {"asin": "B0799R92XJ", "sku": "R580-003", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 18.99, "d_yd": 0.0, "d_7d": -18.99}, {"asin": "B07FKWPHZF", "sku": "R260-107", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 1114.0, "d7": 0.0, "d_yd": -1114.0, "d_7d": 0.0}, {"asin": "B00SQ50OXY", "sku": "R260-113", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 211.0, "d7": 211.0, "d_yd": -211.0, "d_7d": -211.0}, {"asin": "B072MYVC7N", "sku": "R044-099", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 14.64, "d_yd": 0.0, "d_7d": -14.64}, {"asin": "B097G9C2MH", "sku": "R059-206", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 55.8, "d7": 27.9, "d_yd": -55.8, "d_7d": -27.9}, {"asin": "B08M6FYYFT", "sku": "R153-007-stickerless", "team": "vh", "curr": "MXN", "qty_today": 0, "today": 0.0, "yd": 811.14, "d7": 0.0, "d_yd": -811.14, "d_7d": 0.0}, {"asin": "B00O6LGLC0", "sku": "R106-018", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B016WQTJ4S", "sku": "R598-002", "team": "ae", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 80.0, "d_yd": 0.0, "d_7d": -80.0}, {"asin": "B00886IECE", "sku": "R204-544", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.56, "d_yd": 0.0, "d_7d": -19.56}, {"asin": "B008FPZ98K", "sku": "R116-203", "team": "vh", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B002YAEA1Y", "sku": "R020-118", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 29.99, "d7": 119.96, "d_yd": -29.99, "d_7d": -119.96}, {"asin": "B0C4GY3T7G", "sku": "R059-327", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 31.85, "d_yd": 0.0, "d_7d": -31.85}, {"asin": "B0F9FRKD6R", "sku": "R695-251", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B00JS18EKA", "sku": "R303-340", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 138.58, "d7": 0.0, "d_yd": -138.58, "d_7d": 0.0}, {"asin": "B00JS18EKA", "sku": "R303-340", "team": "sf", "curr": "CAD", "qty_today": 0, "today": 0.0, "yd": 99.75, "d7": 0.0, "d_yd": -99.75, "d_7d": 0.0}, {"asin": "B0DCDWK3W9", "sku": "R806-003", "team": "rb", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.0, "d7": 0.0, "d_yd": -9.0, "d_7d": 0.0}, {"asin": "B0DJSZF3F3", "sku": "PL005-003", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 47.96, "d_yd": 0.0, "d_7d": -47.96}, {"asin": "B078J1K4XG", "sku": "R059-080", "team": "sf", "curr": "MXN", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 349.7, "d_yd": 0.0, "d_7d": -349.7}, {"asin": "B0799QBTD4", "sku": "R580-007", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 58.99, "d7": 58.99, "d_yd": -58.99, "d_7d": -58.99}, {"asin": "B09N3CJNCB", "sku": "R243-100", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 699.98, "d7": 0.0, "d_yd": -699.98, "d_7d": 0.0}, {"asin": "B08WCDSZNR", "sku": "R501-111", "team": "ae", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B07YVGLGP4", "sku": "R437-003", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B0D6XGP2Q4", "sku": "R059-286", "team": "sf", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.81, "d_yd": 0.0, "d_7d": -19.81}]};
-// ── helpers ──────────────────────────────────────────────────────────
-const $ = id => document.getElementById(id);
-const fmtD = n => n == null ? '—' : '$' + (+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
-const fmtI = n => (+n).toLocaleString('en-US');
-const sign  = n => n > 0 ? '+' : '';
+const DATA = {"labels": {"today": "10.03.2026", "yd": "09.03.2026", "d7": "03.03.2026"}, "currencies": ["CAD", "MXN", "USD"], "currency_chart": [{"curr": "CAD", "today": 636.16, "yd": 99.75, "d7": 47.06}, {"curr": "MXN", "today": 3892.27, "yd": 1000.74, "d7": 2038.84}, {"curr": "USD", "today": 11217.33, "yd": 5898.57, "d7": 6247.34}], "slices": {"ALL": {"kpi": {"rev_today": 15745.76, "rev_yd": 6999.06, "rev_7d": 8333.24, "units_today": 291, "delta_yd": 8746.7, "delta_7d": 7412.52, "delta_yd_pct": 125.0, "delta_7d_pct": 89.0}, "top_skus": [{"sku": "R152-008", "asin": "B07FCZ6YRN", "today": 3375.0, "yd": 0.0, "d7": 899.0}, {"sku": "R152-006", "asin": "B07885RDHK", "today": 1918.98, "yd": 0.0, "d7": 0.0}, {"sku": "R243-103", "asin": "B08H1NQCGJ", "today": 1353.84, "yd": 455.02, "d7": 0.0}, {"sku": "R303-086-1", "asin": "B08T6G79MX", "today": 828.75, "yd": 0.0, "d7": 0.0}, {"sku": "R786-106", "asin": "B0BN21982X", "today": 750.12, "yd": 0.0, "d7": 0.0}, {"sku": "R695-100", "asin": "B0D4ZH6551", "today": 685.51, "yd": 475.66, "d7": 349.75}, {"sku": "R152-009", "asin": "B019YHE0NM", "today": 665.0, "yd": 0.0, "d7": 0.0}, {"sku": "R059-202", "asin": "B0198VI55S", "today": 640.6, "yd": 0.0, "d7": 0.0}, {"sku": "R303-310", "asin": "B0DHVYW863", "today": 636.16, "yd": 0.0, "d7": 0.0}, {"sku": "R799-002", "asin": "B09FVB3NHV", "today": 601.99, "yd": 0.0, "d7": 597.7}, {"sku": "R059-118", "asin": "B01GWAISTG", "today": 545.72, "yd": 545.72, "d7": 1091.44}, {"sku": "R152-012", "asin": "B00JGZCGRA", "today": 480.0, "yd": 0.0, "d7": 0.0}, {"sku": "R260-104", "asin": "B07FKTH136", "today": 360.64, "yd": 0.0, "d7": 0.0}, {"sku": "R303-337", "asin": "B09BSMS1JN", "today": 181.67, "yd": 0.0, "d7": 0.0}, {"sku": "R695-211", "asin": "B0F7HZHZH1", "today": 158.66, "yd": 96.78, "d7": 15.8}, {"sku": "R695-125", "asin": "B07NKG1SW8", "today": 131.76, "yd": 197.64, "d7": 132.09}, {"sku": "R712-004", "asin": "B00PV8M0W2", "today": 131.55, "yd": 107.76, "d7": 138.17}, {"sku": "R695-400", "asin": "B0FFHJ4FCT", "today": 116.82, "yd": 162.25, "d7": 156.14}, {"sku": "R712-005", "asin": "B07QGF564V", "today": 115.95, "yd": 185.52, "d7": 71.08}, {"sku": "R568-004", "asin": "B015Q9J06Y", "today": 109.89, "yd": 129.87, "d7": 119.88}], "waterfall": [{"sku": "R152-008", "today": 3375.0, "yd": 0.0, "delta": 3375.0}, {"sku": "R152-006", "today": 1918.98, "yd": 0.0, "delta": 1918.98}, {"sku": "R260-107", "today": 0.0, "yd": 1114.0, "delta": -1114.0}, {"sku": "R243-103", "today": 1353.84, "yd": 455.02, "delta": 898.82}, {"sku": "R303-086-1", "today": 828.75, "yd": 0.0, "delta": 828.75}, {"sku": "R786-106", "today": 750.12, "yd": 0.0, "delta": 750.12}, {"sku": "R243-100", "today": 0.0, "yd": 699.98, "delta": -699.98}, {"sku": "R152-009", "today": 665.0, "yd": 0.0, "delta": 665.0}, {"sku": "R059-202", "today": 640.6, "yd": 0.0, "delta": 640.6}, {"sku": "R303-310", "today": 636.16, "yd": 0.0, "delta": 636.16}], "table": [{"asin": "B07FCZ6YRN", "sku": "R152-008", "curr": "USD", "qty_today": 3, "today": 3375.0, "yd": 0.0, "d7": 899.0, "d_yd": 3375.0, "d_7d": 2476.0}, {"asin": "B07885RDHK", "sku": "R152-006", "curr": "USD", "qty_today": 2, "today": 1918.98, "yd": 0.0, "d7": 0.0, "d_yd": 1918.98, "d_7d": 1918.98}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "curr": "MXN", "qty_today": 3, "today": 1353.84, "yd": 455.02, "d7": 0.0, "d_yd": 898.82, "d_7d": 1353.84}, {"asin": "B08T6G79MX", "sku": "R303-086-1", "curr": "USD", "qty_today": 3, "today": 828.75, "yd": 0.0, "d7": 0.0, "d_yd": 828.75, "d_7d": 828.75}, {"asin": "B0BN21982X", "sku": "R786-106", "curr": "MXN", "qty_today": 2, "today": 750.12, "yd": 0.0, "d7": 0.0, "d_yd": 750.12, "d_7d": 750.12}, {"asin": "B0D4ZH6551", "sku": "R695-100", "curr": "USD", "qty_today": 49, "today": 685.51, "yd": 475.66, "d7": 349.75, "d_yd": 209.85, "d_7d": 335.76}, {"asin": "B019YHE0NM", "sku": "R152-009", "curr": "USD", "qty_today": 1, "today": 665.0, "yd": 0.0, "d7": 0.0, "d_yd": 665.0, "d_7d": 665.0}, {"asin": "B0198VI55S", "sku": "R059-202", "curr": "MXN", "qty_today": 1, "today": 640.6, "yd": 0.0, "d7": 0.0, "d_yd": 640.6, "d_7d": 640.6}, {"asin": "B0DHVYW863", "sku": "R303-310", "curr": "CAD", "qty_today": 2, "today": 636.16, "yd": 0.0, "d7": 0.0, "d_yd": 636.16, "d_7d": 636.16}, {"asin": "B09FVB3NHV", "sku": "R799-002", "curr": "MXN", "qty_today": 1, "today": 601.99, "yd": 0.0, "d7": 597.7, "d_yd": 601.99, "d_7d": 4.29}, {"asin": "B01GWAISTG", "sku": "R059-118", "curr": "MXN", "qty_today": 1, "today": 545.72, "yd": 545.72, "d7": 1091.44, "d_yd": 0.0, "d_7d": -545.72}, {"asin": "B00JGZCGRA", "sku": "R152-012", "curr": "USD", "qty_today": 1, "today": 480.0, "yd": 0.0, "d7": 0.0, "d_yd": 480.0, "d_7d": 480.0}, {"asin": "B07FKTH136", "sku": "R260-104", "curr": "USD", "qty_today": 1, "today": 360.64, "yd": 0.0, "d7": 0.0, "d_yd": 360.64, "d_7d": 360.64}, {"asin": "B09BSMS1JN", "sku": "R303-337", "curr": "USD", "qty_today": 2, "today": 181.67, "yd": 0.0, "d7": 0.0, "d_yd": 181.67, "d_7d": 181.67}, {"asin": "B0F7HZHZH1", "sku": "R695-211", "curr": "USD", "qty_today": 10, "today": 158.66, "yd": 96.78, "d7": 15.8, "d_yd": 61.88, "d_7d": 142.86}, {"asin": "B07NKG1SW8", "sku": "R695-125", "curr": "USD", "qty_today": 24, "today": 131.76, "yd": 197.64, "d7": 132.09, "d_yd": -65.88, "d_7d": -0.33}, {"asin": "B00PV8M0W2", "sku": "R712-004", "curr": "USD", "qty_today": 5, "today": 131.55, "yd": 107.76, "d7": 138.17, "d_yd": 23.79, "d_7d": -6.62}, {"asin": "B0FFHJ4FCT", "sku": "R695-400", "curr": "USD", "qty_today": 18, "today": 116.82, "yd": 162.25, "d7": 156.14, "d_yd": -45.43, "d_7d": -39.32}, {"asin": "B07QGF564V", "sku": "R712-005", "curr": "USD", "qty_today": 5, "today": 115.95, "yd": 185.52, "d7": 71.08, "d_yd": -69.57, "d_7d": 44.87}, {"asin": "B015Q9J06Y", "sku": "R568-004", "curr": "USD", "qty_today": 11, "today": 109.89, "yd": 129.87, "d7": 119.88, "d_yd": -19.98, "d_7d": -9.99}, {"asin": "B075NV78FH", "sku": "R260-100", "curr": "USD", "qty_today": 1, "today": 106.0, "yd": 0.0, "d7": 209.88, "d_yd": 106.0, "d_7d": -103.88}, {"asin": "B078J1K4XG", "sku": "R059-080", "curr": "USD", "qty_today": 5, "today": 99.92, "yd": 106.42, "d7": 49.96, "d_yd": -6.5, "d_7d": 49.96}, {"asin": "B00FJJ2R9O", "sku": "R153-006", "curr": "USD", "qty_today": 2, "today": 83.22, "yd": 41.19, "d7": 0.0, "d_yd": 42.03, "d_7d": 83.22}, {"asin": "B07417C5D1", "sku": "R568-001", "curr": "USD", "qty_today": 4, "today": 79.56, "yd": 199.1, "d7": 19.99, "d_yd": -119.54, "d_7d": 59.57}, {"asin": "B06ZY328FH", "sku": "R580-001", "curr": "USD", "qty_today": 6, "today": 77.94, "yd": 129.9, "d7": 194.35, "d_yd": -51.96, "d_7d": -116.41}, {"asin": "B01LZVL5A5", "sku": "R437-104", "curr": "USD", "qty_today": 15, "today": 77.15, "yd": 51.95, "d7": 72.7, "d_yd": 25.2, "d_7d": 4.45}, {"asin": "B0F7HXZXFD", "sku": "R695-212", "curr": "USD", "qty_today": 7, "today": 74.94, "yd": 287.02, "d7": 0.0, "d_yd": -212.08, "d_7d": 74.94}, {"asin": "B0FJMNM9Z6", "sku": "R695-258", "curr": "USD", "qty_today": 4, "today": 71.96, "yd": 161.91, "d7": 449.75, "d_yd": -89.95, "d_7d": -377.79}, {"asin": "B0FMKMS2SW", "sku": "R695-255-1", "curr": "USD", "qty_today": 4, "today": 71.96, "yd": 35.98, "d7": 521.71, "d_yd": 35.98, "d_7d": -449.75}, {"asin": "B019527TJ8", "sku": "R059-020", "curr": "USD", "qty_today": 2, "today": 67.98, "yd": 0.0, "d7": 0.0, "d_yd": 67.98, "d_7d": 67.98}, {"asin": "B004MHZL5Q", "sku": "R204-509", "curr": "USD", "qty_today": 7, "today": 67.52, "yd": 0.0, "d7": 20.25, "d_yd": 67.52, "d_7d": 47.27}, {"asin": "B077HWVNFP", "sku": "R568-002", "curr": "USD", "qty_today": 2, "today": 63.7, "yd": 30.12, "d7": 173.94, "d_yd": 33.58, "d_7d": -110.24}, {"asin": "B07M8LMMV6", "sku": "R228-007", "curr": "USD", "qty_today": 5, "today": 62.45, "yd": 62.45, "d7": 87.43, "d_yd": 0.0, "d_7d": -24.98}, {"asin": "B08ZW5TXVV", "sku": "R695-024", "curr": "USD", "qty_today": 7, "today": 55.23, "yd": 86.79, "d7": 55.23, "d_yd": -31.56, "d_7d": 0.0}, {"asin": "B07BFH3Z1H", "sku": "R762-001", "curr": "USD", "qty_today": 2, "today": 51.78, "yd": 51.78, "d7": 103.56, "d_yd": 0.0, "d_7d": -51.78}, {"asin": "B0CNVZWF2L", "sku": "R695-112", "curr": "USD", "qty_today": 5, "today": 49.95, "yd": 29.97, "d7": 29.97, "d_yd": 19.98, "d_7d": 19.98}, {"asin": "B0188ICJWC", "sku": "R153-002", "curr": "USD", "qty_today": 1, "today": 47.03, "yd": 0.0, "d7": 0.0, "d_yd": 47.03, "d_7d": 47.03}, {"asin": "B088PNBKTR", "sku": "R695-012", "curr": "USD", "qty_today": 5, "today": 41.25, "yd": 82.5, "d7": 49.5, "d_yd": -41.25, "d_7d": -8.25}, {"asin": "B0C5FP8R7J", "sku": "R695-023", "curr": "USD", "qty_today": 4, "today": 36.8, "yd": 64.4, "d7": 258.05, "d_yd": -27.6, "d_7d": -221.25}, {"asin": "B0GFF8YPFJ", "sku": "PL002-003", "curr": "USD", "qty_today": 2, "today": 35.98, "yd": 0.0, "d7": 0.0, "d_yd": 35.98, "d_7d": 35.98}, {"asin": "B08N4N97DZ", "sku": "R695-001", "curr": "USD", "qty_today": 5, "today": 35.25, "yd": 7.29, "d7": 36.45, "d_yd": 27.96, "d_7d": -1.2}, {"asin": "B00A6VUPEO", "sku": "R712-016", "curr": "USD", "qty_today": 4, "today": 33.79, "yd": 42.45, "d7": 62.23, "d_yd": -8.66, "d_7d": -28.44}, {"asin": "B01GWAISTG", "sku": "R059-118", "curr": "USD", "qty_today": 1, "today": 32.0, "yd": 32.7, "d7": 32.9, "d_yd": -0.7, "d_7d": -0.9}, {"asin": "B07KGGPCZ2", "sku": "R786-101", "curr": "USD", "qty_today": 2, "today": 29.98, "yd": 44.97, "d7": 14.99, "d_yd": -14.99, "d_7d": 14.99}, {"asin": "B00M777UUW", "sku": "R437-205", "curr": "USD", "qty_today": 3, "today": 29.1, "yd": 9.7, "d7": 39.16, "d_yd": 19.4, "d_7d": -10.06}, {"asin": "B004I07MFO", "sku": "R437-202", "curr": "USD", "qty_today": 3, "today": 28.47, "yd": 28.47, "d7": 9.49, "d_yd": 0.0, "d_7d": 18.98}, {"asin": "B0C2FDB97J", "sku": "R695-021", "curr": "USD", "qty_today": 3, "today": 27.0, "yd": 9.0, "d7": 27.0, "d_yd": 18.0, "d_7d": 0.0}, {"asin": "B0F7J27FP6", "sku": "R695-213", "curr": "USD", "qty_today": 2, "today": 26.98, "yd": 0.0, "d7": 0.0, "d_yd": 26.98, "d_7d": 26.98}, {"asin": "B0CDDN93TV", "sku": "R059-240", "curr": "USD", "qty_today": 1, "today": 25.2, "yd": 0.0, "d7": 0.0, "d_yd": 25.2, "d_7d": 25.2}, {"asin": "B0D47S7KW7", "sku": "PL001-005", "curr": "USD", "qty_today": 2, "today": 23.98, "yd": 0.0, "d7": 23.98, "d_yd": 23.98, "d_7d": 0.0}, {"asin": "B0725JT16D", "sku": "R580-008", "curr": "USD", "qty_today": 2, "today": 23.58, "yd": 0.0, "d7": 117.9, "d_yd": 23.58, "d_7d": -94.32}, {"asin": "B0054TB8R6", "sku": "R059-237", "curr": "USD", "qty_today": 1, "today": 22.89, "yd": 159.77, "d7": 274.68, "d_yd": -136.88, "d_7d": -251.79}, {"asin": "B01M0FB8KU", "sku": "R106-004", "curr": "USD", "qty_today": 1, "today": 22.15, "yd": 0.0, "d7": 0.0, "d_yd": 22.15, "d_7d": 22.15}, {"asin": "B0FH2T1JBH", "sku": "PL016-001", "curr": "USD", "qty_today": 2, "today": 20.3, "yd": 10.15, "d7": 0.0, "d_yd": 10.15, "d_7d": 20.3}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "curr": "USD", "qty_today": 1, "today": 19.99, "yd": 0.0, "d7": 39.98, "d_yd": 19.99, "d_7d": -19.99}, {"asin": "B0FJMPHVKZ", "sku": "R695-256", "curr": "USD", "qty_today": 1, "today": 17.99, "yd": 0.0, "d7": 179.9, "d_yd": 17.99, "d_7d": -161.91}, {"asin": "B0BN223BSG", "sku": "R786-105", "curr": "USD", "qty_today": 1, "today": 14.99, "yd": 0.0, "d7": 0.0, "d_yd": 14.99, "d_7d": 14.99}, {"asin": "B077VY6XLL", "sku": "R437-209", "curr": "USD", "qty_today": 1, "today": 14.97, "yd": 0.0, "d7": 0.0, "d_yd": 14.97, "d_7d": 14.97}, {"asin": "B0DXVPFNPZ", "sku": "PL004-001", "curr": "USD", "qty_today": 1, "today": 14.95, "yd": 0.0, "d7": 0.0, "d_yd": 14.95, "d_7d": 14.95}, {"asin": "B088PN91KK", "sku": "R695-228", "curr": "USD", "qty_today": 2, "today": 13.98, "yd": 6.99, "d7": 0.0, "d_yd": 6.99, "d_7d": 13.98}, {"asin": "B016CGQNMY", "sku": "R044-049", "curr": "USD", "qty_today": 1, "today": 13.25, "yd": 0.0, "d7": 0.0, "d_yd": 13.25, "d_7d": 13.25}, {"asin": "B0DMWDTZT7", "sku": "PL008-001", "curr": "USD", "qty_today": 1, "today": 12.99, "yd": 0.0, "d7": 0.0, "d_yd": 12.99, "d_7d": 12.99}, {"asin": "B009411R7Q", "sku": "R044-482", "curr": "USD", "qty_today": 1, "today": 12.57, "yd": 0.0, "d7": 0.0, "d_yd": 12.57, "d_7d": 12.57}, {"asin": "B0F24Y8L9D", "sku": "PL010-002", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0DJT1G2GB", "sku": "PL005-004", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 11.99, "d7": 0.0, "d_yd": 0.0, "d_7d": 11.99}, {"asin": "B0F32XZYGM", "sku": "PL005-006", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0DCCJZHMV", "sku": "R806-013", "curr": "USD", "qty_today": 2, "today": 11.98, "yd": 65.89, "d7": 55.92, "d_yd": -53.91, "d_7d": -43.94}, {"asin": "B01N4M4GYS", "sku": "R059-109", "curr": "USD", "qty_today": 1, "today": 10.9, "yd": 0.0, "d7": 0.0, "d_yd": 10.9, "d_7d": 10.9}, {"asin": "B07XZG9P5Q", "sku": "R806-006", "curr": "USD", "qty_today": 1, "today": 9.15, "yd": 0.0, "d7": 9.15, "d_yd": 9.15, "d_7d": 0.0}, {"asin": "B0BZWQXZGL", "sku": "R695-235", "curr": "USD", "qty_today": 1, "today": 8.26, "yd": 24.62, "d7": 8.25, "d_yd": -16.36, "d_7d": 0.01}, {"asin": "B0DDFCSMXH", "sku": "R806-005", "curr": "USD", "qty_today": 1, "today": 8.15, "yd": 0.0, "d7": 0.0, "d_yd": 8.15, "d_7d": 8.15}, {"asin": "B088PMLVMH", "sku": "R695-040", "curr": "USD", "qty_today": 1, "today": 7.97, "yd": 7.97, "d7": 71.73, "d_yd": 0.0, "d_7d": -63.76}, {"asin": "B0F7XVCMDK", "sku": "R695-214", "curr": "USD", "qty_today": 1, "today": 7.17, "yd": 14.34, "d7": 7.17, "d_yd": -7.17, "d_7d": 0.0}, {"asin": "B0D47THGP3", "sku": "PL001-006", "curr": "USD", "qty_today": 1, "today": 6.99, "yd": 0.0, "d7": 16.98, "d_yd": 6.99, "d_7d": -9.99}, {"asin": "B0DD66B2TJ", "sku": "R806-015", "curr": "USD", "qty_today": 1, "today": 5.99, "yd": 17.97, "d7": 24.97, "d_yd": -11.98, "d_7d": -18.98}, {"asin": "B0DCDSHKF3", "sku": "R806-016", "curr": "USD", "qty_today": 1, "today": 5.95, "yd": 0.0, "d7": 0.0, "d_yd": 5.95, "d_7d": 5.95}, {"asin": "B0D7Z99845", "sku": "PL001-013", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.99, "d_yd": 0.0, "d_7d": -9.99}, {"asin": "B0BN21F336", "sku": "R786-107", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 14.99, "d7": 0.0, "d_yd": -14.99, "d_7d": 0.0}, {"asin": "B01BEVS262", "sku": "R163-142", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.57, "d_yd": 0.0, "d_7d": -20.57}, {"asin": "B01HDCGI4Y", "sku": "R163-131", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 21.95, "d_yd": 0.0, "d_7d": -21.95}, {"asin": "B09SPD17XJ", "sku": "R695-233", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 6.49, "d7": 0.0, "d_yd": -6.49, "d_7d": 0.0}, {"asin": "B0F6V7J4FX", "sku": "PL007-001", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 36.05, "d7": 10.3, "d_yd": -36.05, "d_7d": -10.3}, {"asin": "B0F9FLPNV7", "sku": "R695-246", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 7.99, "d_yd": -7.99, "d_7d": -7.99}, {"asin": "B0F9FQ9BK6", "sku": "R695-245", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.99, "d_yd": 0.0, "d_7d": -6.99}, {"asin": "B0DCD12LBY", "sku": "R806-009", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 5.95, "d7": 0.0, "d_yd": -5.95, "d_7d": 0.0}, {"asin": "B00G6B4UNA", "sku": "R695-226", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.83, "d7": 0.0, "d_yd": -7.83, "d_7d": 0.0}, {"asin": "B0F9FR129N", "sku": "R695-248", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.49, "d7": 19.98, "d_yd": -7.49, "d_7d": -19.98}, {"asin": "B0FJMSRF8S", "sku": "R695-257", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 16.99, "d_yd": 0.0, "d_7d": -16.99}, {"asin": "B0F24X6L65", "sku": "PL010-001", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 15.98, "d7": 0.0, "d_yd": -15.98, "d_7d": 0.0}, {"asin": "B09FVB3NHV", "sku": "R799-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 56.98, "d7": 0.0, "d_yd": -56.98, "d_7d": 0.0}, {"asin": "B0DCDCRTW6", "sku": "R806-012", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 20.78, "d7": 0.0, "d_yd": -20.78, "d_7d": 0.0}, {"asin": "B0D816LH3Z", "sku": "PL001-011", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.97, "d_yd": 0.0, "d_7d": -19.97}, {"asin": "B072MYVC7N", "sku": "R044-099", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 14.64, "d_yd": 0.0, "d_7d": -14.64}, {"asin": "B0DBFP8FYL", "sku": "R806-029", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 0.0, "d_yd": -7.99, "d_7d": 0.0}, {"asin": "B0012KCVQS", "sku": "R195-527", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 23.4, "d7": 0.0, "d_yd": -23.4, "d_7d": 0.0}, {"asin": "B0DJSZF3F3", "sku": "PL005-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 23.98, "d_yd": 0.0, "d_7d": -23.98}, {"asin": "B00SQ50OXY", "sku": "R260-113", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 211.0, "d7": 211.0, "d_yd": -211.0, "d_7d": -211.0}, {"asin": "B078J1K4XG", "sku": "R059-080", "curr": "MXN", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 349.7, "d_yd": 0.0, "d_7d": -349.7}, {"asin": "B01E4P6O38", "sku": "R044-098", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 8.99, "d7": 0.0, "d_yd": -8.99, "d_7d": 0.0}, {"asin": "B00JS18EKA", "sku": "R303-340", "curr": "CAD", "qty_today": 0, "today": 0.0, "yd": 99.75, "d7": 0.0, "d_yd": -99.75, "d_7d": 0.0}, {"asin": "B0F9FRKD6R", "sku": "R695-251", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B00JS18EKA", "sku": "R303-340", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 138.58, "d7": 0.0, "d_yd": -138.58, "d_7d": 0.0}, {"asin": "B0FLDK11TQ", "sku": "PL013-004", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 7.99, "d_yd": 0.0, "d_7d": -7.99}, {"asin": "B084GY6NBC", "sku": "R695-011", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 8.99, "d7": 26.79, "d_yd": -8.99, "d_7d": -26.79}, {"asin": "B016WQTJ4S", "sku": "R598-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 80.0, "d_yd": 0.0, "d_7d": -80.0}, {"asin": "B0BC6RSS1S", "sku": "R695-005", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 8.3, "d_yd": 0.0, "d_7d": -8.3}, {"asin": "B09W44GW6W", "sku": "R695-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 17.99, "d_yd": 0.0, "d_7d": -17.99}, {"asin": "B0799QBTD4", "sku": "R580-007", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 58.99, "d7": 58.99, "d_yd": -58.99, "d_7d": -58.99}, {"asin": "B09N3CJNCB", "sku": "R243-100", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 699.98, "d7": 0.0, "d_yd": -699.98, "d_7d": 0.0}, {"asin": "B00O6LGLC0", "sku": "R106-018", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B097G9C2MH", "sku": "R059-206", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 55.8, "d7": 27.9, "d_yd": -55.8, "d_7d": -27.9}, {"asin": "B00BQOP3VK", "sku": "R059-154", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 24.94, "d_yd": 0.0, "d_7d": -24.94}, {"asin": "B07FKWPHZF", "sku": "R260-107", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 1114.0, "d7": 0.0, "d_yd": -1114.0, "d_7d": 0.0}, {"asin": "B0799R92XJ", "sku": "R580-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 18.99, "d_yd": 0.0, "d_7d": -18.99}, {"asin": "B08YT82V5X", "sku": "R401-112", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B0CPJJV4S9", "sku": "PL001-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 6.99, "d7": 8.99, "d_yd": -6.99, "d_7d": -8.99}, {"asin": "B00886IECE", "sku": "R204-544", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.56, "d_yd": 0.0, "d_7d": -19.56}, {"asin": "B008FPZ98K", "sku": "R116-203", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B002YAEA1Y", "sku": "R020-118", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 119.96, "d_yd": 0.0, "d_7d": -119.96}, {"asin": "B07Y6S6C9F", "sku": "R059-263", "curr": "CAD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 47.06, "d_yd": 0.0, "d_7d": -47.06}, {"asin": "B0FNWR2D9B", "sku": "R695-266", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.49, "d_yd": 0.0, "d_7d": -6.49}, {"asin": "B09FGBGKHX", "sku": "R695-239", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 19.78, "d_yd": -9.99, "d_7d": -19.78}, {"asin": "B08PW6ZVLK", "sku": "R712-031", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.0, "d_yd": 0.0, "d_7d": -20.0}, {"asin": "B01CILGELM", "sku": "R437-206", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 10.21, "d7": 0.0, "d_yd": -10.21, "d_7d": 0.0}, {"asin": "B00M777566", "sku": "R437-204", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 18.0, "d7": 18.63, "d_yd": -18.0, "d_7d": -18.63}, {"asin": "B0DBFQLZRG", "sku": "R806-030", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.98, "d_yd": 0.0, "d_7d": -19.98}, {"asin": "B0DD5TVSM9", "sku": "R806-014", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 11.98, "d7": 24.71, "d_yd": -11.98, "d_7d": -24.71}, {"asin": "B0F1DJJP3S", "sku": "PL013-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.99, "d_yd": 0.0, "d_7d": -9.99}, {"asin": "B0DSWB562R", "sku": "PL008-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B0DMWDG4VD", "sku": "PL008-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 15.99, "d_yd": 0.0, "d_7d": -15.99}, {"asin": "B0C5FR12SJ", "sku": "R695-027", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 41.94, "d7": 56.2, "d_yd": -41.94, "d_7d": -56.2}, {"asin": "B0D6XGP2Q4", "sku": "R059-286", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.81, "d_yd": 0.0, "d_7d": -19.81}]}, "CAD": {"kpi": {"rev_today": 636.16, "rev_yd": 99.75, "rev_7d": 47.06, "units_today": 2, "delta_yd": 536.41, "delta_7d": 589.1, "delta_yd_pct": 537.8, "delta_7d_pct": 1251.8}, "top_skus": [{"sku": "R303-310", "asin": "B0DHVYW863", "today": 636.16, "yd": 0.0, "d7": 0.0}, {"sku": "R303-340", "asin": "B00JS18EKA", "today": 0.0, "yd": 99.75, "d7": 0.0}, {"sku": "R059-263", "asin": "B07Y6S6C9F", "today": 0.0, "yd": 0.0, "d7": 47.06}], "waterfall": [{"sku": "R303-310", "today": 636.16, "yd": 0.0, "delta": 636.16}, {"sku": "R303-340", "today": 0.0, "yd": 99.75, "delta": -99.75}, {"sku": "R059-263", "today": 0.0, "yd": 0.0, "delta": 0.0}], "table": [{"asin": "B0DHVYW863", "sku": "R303-310", "curr": "CAD", "qty_today": 2, "today": 636.16, "yd": 0.0, "d7": 0.0, "d_yd": 636.16, "d_7d": 636.16}, {"asin": "B00JS18EKA", "sku": "R303-340", "curr": "CAD", "qty_today": 0, "today": 0.0, "yd": 99.75, "d7": 0.0, "d_yd": -99.75, "d_7d": 0.0}, {"asin": "B07Y6S6C9F", "sku": "R059-263", "curr": "CAD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 47.06, "d_yd": 0.0, "d_7d": -47.06}]}, "MXN": {"kpi": {"rev_today": 3892.27, "rev_yd": 1000.74, "rev_7d": 2038.84, "units_today": 8, "delta_yd": 2891.53, "delta_7d": 1853.43, "delta_yd_pct": 288.9, "delta_7d_pct": 90.9}, "top_skus": [{"sku": "R243-103", "asin": "B08H1NQCGJ", "today": 1353.84, "yd": 455.02, "d7": 0.0}, {"sku": "R786-106", "asin": "B0BN21982X", "today": 750.12, "yd": 0.0, "d7": 0.0}, {"sku": "R059-202", "asin": "B0198VI55S", "today": 640.6, "yd": 0.0, "d7": 0.0}, {"sku": "R799-002", "asin": "B09FVB3NHV", "today": 601.99, "yd": 0.0, "d7": 597.7}, {"sku": "R059-118", "asin": "B01GWAISTG", "today": 545.72, "yd": 545.72, "d7": 1091.44}, {"sku": "R059-080", "asin": "B078J1K4XG", "today": 0.0, "yd": 0.0, "d7": 349.7}], "waterfall": [{"sku": "R243-103", "today": 1353.84, "yd": 455.02, "delta": 898.82}, {"sku": "R786-106", "today": 750.12, "yd": 0.0, "delta": 750.12}, {"sku": "R059-202", "today": 640.6, "yd": 0.0, "delta": 640.6}, {"sku": "R799-002", "today": 601.99, "yd": 0.0, "delta": 601.99}, {"sku": "R059-080", "today": 0.0, "yd": 0.0, "delta": 0.0}, {"sku": "R059-118", "today": 545.72, "yd": 545.72, "delta": 0.0}], "table": [{"asin": "B08H1NQCGJ", "sku": "R243-103", "curr": "MXN", "qty_today": 3, "today": 1353.84, "yd": 455.02, "d7": 0.0, "d_yd": 898.82, "d_7d": 1353.84}, {"asin": "B0BN21982X", "sku": "R786-106", "curr": "MXN", "qty_today": 2, "today": 750.12, "yd": 0.0, "d7": 0.0, "d_yd": 750.12, "d_7d": 750.12}, {"asin": "B0198VI55S", "sku": "R059-202", "curr": "MXN", "qty_today": 1, "today": 640.6, "yd": 0.0, "d7": 0.0, "d_yd": 640.6, "d_7d": 640.6}, {"asin": "B09FVB3NHV", "sku": "R799-002", "curr": "MXN", "qty_today": 1, "today": 601.99, "yd": 0.0, "d7": 597.7, "d_yd": 601.99, "d_7d": 4.29}, {"asin": "B01GWAISTG", "sku": "R059-118", "curr": "MXN", "qty_today": 1, "today": 545.72, "yd": 545.72, "d7": 1091.44, "d_yd": 0.0, "d_7d": -545.72}, {"asin": "B078J1K4XG", "sku": "R059-080", "curr": "MXN", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 349.7, "d_yd": 0.0, "d_7d": -349.7}]}, "USD": {"kpi": {"rev_today": 11217.33, "rev_yd": 5898.57, "rev_7d": 6247.34, "units_today": 281, "delta_yd": 5318.76, "delta_7d": 4969.99, "delta_yd_pct": 90.2, "delta_7d_pct": 79.6}, "top_skus": [{"sku": "R152-008", "asin": "B07FCZ6YRN", "today": 3375.0, "yd": 0.0, "d7": 899.0}, {"sku": "R152-006", "asin": "B07885RDHK", "today": 1918.98, "yd": 0.0, "d7": 0.0}, {"sku": "R303-086-1", "asin": "B08T6G79MX", "today": 828.75, "yd": 0.0, "d7": 0.0}, {"sku": "R695-100", "asin": "B0D4ZH6551", "today": 685.51, "yd": 475.66, "d7": 349.75}, {"sku": "R152-009", "asin": "B019YHE0NM", "today": 665.0, "yd": 0.0, "d7": 0.0}, {"sku": "R152-012", "asin": "B00JGZCGRA", "today": 480.0, "yd": 0.0, "d7": 0.0}, {"sku": "R260-104", "asin": "B07FKTH136", "today": 360.64, "yd": 0.0, "d7": 0.0}, {"sku": "R303-337", "asin": "B09BSMS1JN", "today": 181.67, "yd": 0.0, "d7": 0.0}, {"sku": "R695-211", "asin": "B0F7HZHZH1", "today": 158.66, "yd": 96.78, "d7": 15.8}, {"sku": "R695-125", "asin": "B07NKG1SW8", "today": 131.76, "yd": 197.64, "d7": 132.09}, {"sku": "R712-004", "asin": "B00PV8M0W2", "today": 131.55, "yd": 107.76, "d7": 138.17}, {"sku": "R695-400", "asin": "B0FFHJ4FCT", "today": 116.82, "yd": 162.25, "d7": 156.14}, {"sku": "R712-005", "asin": "B07QGF564V", "today": 115.95, "yd": 185.52, "d7": 71.08}, {"sku": "R568-004", "asin": "B015Q9J06Y", "today": 109.89, "yd": 129.87, "d7": 119.88}, {"sku": "R260-100", "asin": "B075NV78FH", "today": 106.0, "yd": 0.0, "d7": 209.88}, {"sku": "R059-080", "asin": "B078J1K4XG", "today": 99.92, "yd": 106.42, "d7": 49.96}, {"sku": "R153-006", "asin": "B00FJJ2R9O", "today": 83.22, "yd": 41.19, "d7": 0.0}, {"sku": "R568-001", "asin": "B07417C5D1", "today": 79.56, "yd": 199.1, "d7": 19.99}, {"sku": "R580-001", "asin": "B06ZY328FH", "today": 77.94, "yd": 129.9, "d7": 194.35}, {"sku": "R437-104", "asin": "B01LZVL5A5", "today": 77.15, "yd": 51.95, "d7": 72.7}], "waterfall": [{"sku": "R152-008", "today": 3375.0, "yd": 0.0, "delta": 3375.0}, {"sku": "R152-006", "today": 1918.98, "yd": 0.0, "delta": 1918.98}, {"sku": "R260-107", "today": 0.0, "yd": 1114.0, "delta": -1114.0}, {"sku": "R303-086-1", "today": 828.75, "yd": 0.0, "delta": 828.75}, {"sku": "R243-100", "today": 0.0, "yd": 699.98, "delta": -699.98}, {"sku": "R152-009", "today": 665.0, "yd": 0.0, "delta": 665.0}, {"sku": "R152-012", "today": 480.0, "yd": 0.0, "delta": 480.0}, {"sku": "R260-104", "today": 360.64, "yd": 0.0, "delta": 360.64}, {"sku": "R695-212", "today": 74.94, "yd": 287.02, "delta": -212.08}, {"sku": "R260-113", "today": 0.0, "yd": 211.0, "delta": -211.0}], "table": [{"asin": "B07FCZ6YRN", "sku": "R152-008", "curr": "USD", "qty_today": 3, "today": 3375.0, "yd": 0.0, "d7": 899.0, "d_yd": 3375.0, "d_7d": 2476.0}, {"asin": "B07885RDHK", "sku": "R152-006", "curr": "USD", "qty_today": 2, "today": 1918.98, "yd": 0.0, "d7": 0.0, "d_yd": 1918.98, "d_7d": 1918.98}, {"asin": "B08T6G79MX", "sku": "R303-086-1", "curr": "USD", "qty_today": 3, "today": 828.75, "yd": 0.0, "d7": 0.0, "d_yd": 828.75, "d_7d": 828.75}, {"asin": "B0D4ZH6551", "sku": "R695-100", "curr": "USD", "qty_today": 49, "today": 685.51, "yd": 475.66, "d7": 349.75, "d_yd": 209.85, "d_7d": 335.76}, {"asin": "B019YHE0NM", "sku": "R152-009", "curr": "USD", "qty_today": 1, "today": 665.0, "yd": 0.0, "d7": 0.0, "d_yd": 665.0, "d_7d": 665.0}, {"asin": "B00JGZCGRA", "sku": "R152-012", "curr": "USD", "qty_today": 1, "today": 480.0, "yd": 0.0, "d7": 0.0, "d_yd": 480.0, "d_7d": 480.0}, {"asin": "B07FKTH136", "sku": "R260-104", "curr": "USD", "qty_today": 1, "today": 360.64, "yd": 0.0, "d7": 0.0, "d_yd": 360.64, "d_7d": 360.64}, {"asin": "B09BSMS1JN", "sku": "R303-337", "curr": "USD", "qty_today": 2, "today": 181.67, "yd": 0.0, "d7": 0.0, "d_yd": 181.67, "d_7d": 181.67}, {"asin": "B0F7HZHZH1", "sku": "R695-211", "curr": "USD", "qty_today": 10, "today": 158.66, "yd": 96.78, "d7": 15.8, "d_yd": 61.88, "d_7d": 142.86}, {"asin": "B07NKG1SW8", "sku": "R695-125", "curr": "USD", "qty_today": 24, "today": 131.76, "yd": 197.64, "d7": 132.09, "d_yd": -65.88, "d_7d": -0.33}, {"asin": "B00PV8M0W2", "sku": "R712-004", "curr": "USD", "qty_today": 5, "today": 131.55, "yd": 107.76, "d7": 138.17, "d_yd": 23.79, "d_7d": -6.62}, {"asin": "B0FFHJ4FCT", "sku": "R695-400", "curr": "USD", "qty_today": 18, "today": 116.82, "yd": 162.25, "d7": 156.14, "d_yd": -45.43, "d_7d": -39.32}, {"asin": "B07QGF564V", "sku": "R712-005", "curr": "USD", "qty_today": 5, "today": 115.95, "yd": 185.52, "d7": 71.08, "d_yd": -69.57, "d_7d": 44.87}, {"asin": "B015Q9J06Y", "sku": "R568-004", "curr": "USD", "qty_today": 11, "today": 109.89, "yd": 129.87, "d7": 119.88, "d_yd": -19.98, "d_7d": -9.99}, {"asin": "B075NV78FH", "sku": "R260-100", "curr": "USD", "qty_today": 1, "today": 106.0, "yd": 0.0, "d7": 209.88, "d_yd": 106.0, "d_7d": -103.88}, {"asin": "B078J1K4XG", "sku": "R059-080", "curr": "USD", "qty_today": 5, "today": 99.92, "yd": 106.42, "d7": 49.96, "d_yd": -6.5, "d_7d": 49.96}, {"asin": "B00FJJ2R9O", "sku": "R153-006", "curr": "USD", "qty_today": 2, "today": 83.22, "yd": 41.19, "d7": 0.0, "d_yd": 42.03, "d_7d": 83.22}, {"asin": "B07417C5D1", "sku": "R568-001", "curr": "USD", "qty_today": 4, "today": 79.56, "yd": 199.1, "d7": 19.99, "d_yd": -119.54, "d_7d": 59.57}, {"asin": "B06ZY328FH", "sku": "R580-001", "curr": "USD", "qty_today": 6, "today": 77.94, "yd": 129.9, "d7": 194.35, "d_yd": -51.96, "d_7d": -116.41}, {"asin": "B01LZVL5A5", "sku": "R437-104", "curr": "USD", "qty_today": 15, "today": 77.15, "yd": 51.95, "d7": 72.7, "d_yd": 25.2, "d_7d": 4.45}, {"asin": "B0F7HXZXFD", "sku": "R695-212", "curr": "USD", "qty_today": 7, "today": 74.94, "yd": 287.02, "d7": 0.0, "d_yd": -212.08, "d_7d": 74.94}, {"asin": "B0FMKMS2SW", "sku": "R695-255-1", "curr": "USD", "qty_today": 4, "today": 71.96, "yd": 35.98, "d7": 521.71, "d_yd": 35.98, "d_7d": -449.75}, {"asin": "B0FJMNM9Z6", "sku": "R695-258", "curr": "USD", "qty_today": 4, "today": 71.96, "yd": 161.91, "d7": 449.75, "d_yd": -89.95, "d_7d": -377.79}, {"asin": "B019527TJ8", "sku": "R059-020", "curr": "USD", "qty_today": 2, "today": 67.98, "yd": 0.0, "d7": 0.0, "d_yd": 67.98, "d_7d": 67.98}, {"asin": "B004MHZL5Q", "sku": "R204-509", "curr": "USD", "qty_today": 7, "today": 67.52, "yd": 0.0, "d7": 20.25, "d_yd": 67.52, "d_7d": 47.27}, {"asin": "B077HWVNFP", "sku": "R568-002", "curr": "USD", "qty_today": 2, "today": 63.7, "yd": 30.12, "d7": 173.94, "d_yd": 33.58, "d_7d": -110.24}, {"asin": "B07M8LMMV6", "sku": "R228-007", "curr": "USD", "qty_today": 5, "today": 62.45, "yd": 62.45, "d7": 87.43, "d_yd": 0.0, "d_7d": -24.98}, {"asin": "B08ZW5TXVV", "sku": "R695-024", "curr": "USD", "qty_today": 7, "today": 55.23, "yd": 86.79, "d7": 55.23, "d_yd": -31.56, "d_7d": 0.0}, {"asin": "B07BFH3Z1H", "sku": "R762-001", "curr": "USD", "qty_today": 2, "today": 51.78, "yd": 51.78, "d7": 103.56, "d_yd": 0.0, "d_7d": -51.78}, {"asin": "B0CNVZWF2L", "sku": "R695-112", "curr": "USD", "qty_today": 5, "today": 49.95, "yd": 29.97, "d7": 29.97, "d_yd": 19.98, "d_7d": 19.98}, {"asin": "B0188ICJWC", "sku": "R153-002", "curr": "USD", "qty_today": 1, "today": 47.03, "yd": 0.0, "d7": 0.0, "d_yd": 47.03, "d_7d": 47.03}, {"asin": "B088PNBKTR", "sku": "R695-012", "curr": "USD", "qty_today": 5, "today": 41.25, "yd": 82.5, "d7": 49.5, "d_yd": -41.25, "d_7d": -8.25}, {"asin": "B0C5FP8R7J", "sku": "R695-023", "curr": "USD", "qty_today": 4, "today": 36.8, "yd": 64.4, "d7": 258.05, "d_yd": -27.6, "d_7d": -221.25}, {"asin": "B0GFF8YPFJ", "sku": "PL002-003", "curr": "USD", "qty_today": 2, "today": 35.98, "yd": 0.0, "d7": 0.0, "d_yd": 35.98, "d_7d": 35.98}, {"asin": "B08N4N97DZ", "sku": "R695-001", "curr": "USD", "qty_today": 5, "today": 35.25, "yd": 7.29, "d7": 36.45, "d_yd": 27.96, "d_7d": -1.2}, {"asin": "B00A6VUPEO", "sku": "R712-016", "curr": "USD", "qty_today": 4, "today": 33.79, "yd": 42.45, "d7": 62.23, "d_yd": -8.66, "d_7d": -28.44}, {"asin": "B01GWAISTG", "sku": "R059-118", "curr": "USD", "qty_today": 1, "today": 32.0, "yd": 32.7, "d7": 32.9, "d_yd": -0.7, "d_7d": -0.9}, {"asin": "B07KGGPCZ2", "sku": "R786-101", "curr": "USD", "qty_today": 2, "today": 29.98, "yd": 44.97, "d7": 14.99, "d_yd": -14.99, "d_7d": 14.99}, {"asin": "B00M777UUW", "sku": "R437-205", "curr": "USD", "qty_today": 3, "today": 29.1, "yd": 9.7, "d7": 39.16, "d_yd": 19.4, "d_7d": -10.06}, {"asin": "B004I07MFO", "sku": "R437-202", "curr": "USD", "qty_today": 3, "today": 28.47, "yd": 28.47, "d7": 9.49, "d_yd": 0.0, "d_7d": 18.98}, {"asin": "B0C2FDB97J", "sku": "R695-021", "curr": "USD", "qty_today": 3, "today": 27.0, "yd": 9.0, "d7": 27.0, "d_yd": 18.0, "d_7d": 0.0}, {"asin": "B0F7J27FP6", "sku": "R695-213", "curr": "USD", "qty_today": 2, "today": 26.98, "yd": 0.0, "d7": 0.0, "d_yd": 26.98, "d_7d": 26.98}, {"asin": "B0CDDN93TV", "sku": "R059-240", "curr": "USD", "qty_today": 1, "today": 25.2, "yd": 0.0, "d7": 0.0, "d_yd": 25.2, "d_7d": 25.2}, {"asin": "B0D47S7KW7", "sku": "PL001-005", "curr": "USD", "qty_today": 2, "today": 23.98, "yd": 0.0, "d7": 23.98, "d_yd": 23.98, "d_7d": 0.0}, {"asin": "B0725JT16D", "sku": "R580-008", "curr": "USD", "qty_today": 2, "today": 23.58, "yd": 0.0, "d7": 117.9, "d_yd": 23.58, "d_7d": -94.32}, {"asin": "B0054TB8R6", "sku": "R059-237", "curr": "USD", "qty_today": 1, "today": 22.89, "yd": 159.77, "d7": 274.68, "d_yd": -136.88, "d_7d": -251.79}, {"asin": "B01M0FB8KU", "sku": "R106-004", "curr": "USD", "qty_today": 1, "today": 22.15, "yd": 0.0, "d7": 0.0, "d_yd": 22.15, "d_7d": 22.15}, {"asin": "B0FH2T1JBH", "sku": "PL016-001", "curr": "USD", "qty_today": 2, "today": 20.3, "yd": 10.15, "d7": 0.0, "d_yd": 10.15, "d_7d": 20.3}, {"asin": "B08H1NQCGJ", "sku": "R243-103", "curr": "USD", "qty_today": 1, "today": 19.99, "yd": 0.0, "d7": 39.98, "d_yd": 19.99, "d_7d": -19.99}, {"asin": "B0FJMPHVKZ", "sku": "R695-256", "curr": "USD", "qty_today": 1, "today": 17.99, "yd": 0.0, "d7": 179.9, "d_yd": 17.99, "d_7d": -161.91}, {"asin": "B0BN223BSG", "sku": "R786-105", "curr": "USD", "qty_today": 1, "today": 14.99, "yd": 0.0, "d7": 0.0, "d_yd": 14.99, "d_7d": 14.99}, {"asin": "B077VY6XLL", "sku": "R437-209", "curr": "USD", "qty_today": 1, "today": 14.97, "yd": 0.0, "d7": 0.0, "d_yd": 14.97, "d_7d": 14.97}, {"asin": "B0DXVPFNPZ", "sku": "PL004-001", "curr": "USD", "qty_today": 1, "today": 14.95, "yd": 0.0, "d7": 0.0, "d_yd": 14.95, "d_7d": 14.95}, {"asin": "B088PN91KK", "sku": "R695-228", "curr": "USD", "qty_today": 2, "today": 13.98, "yd": 6.99, "d7": 0.0, "d_yd": 6.99, "d_7d": 13.98}, {"asin": "B016CGQNMY", "sku": "R044-049", "curr": "USD", "qty_today": 1, "today": 13.25, "yd": 0.0, "d7": 0.0, "d_yd": 13.25, "d_7d": 13.25}, {"asin": "B0DMWDTZT7", "sku": "PL008-001", "curr": "USD", "qty_today": 1, "today": 12.99, "yd": 0.0, "d7": 0.0, "d_yd": 12.99, "d_7d": 12.99}, {"asin": "B009411R7Q", "sku": "R044-482", "curr": "USD", "qty_today": 1, "today": 12.57, "yd": 0.0, "d7": 0.0, "d_yd": 12.57, "d_7d": 12.57}, {"asin": "B0F24Y8L9D", "sku": "PL010-002", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0DJT1G2GB", "sku": "PL005-004", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 11.99, "d7": 0.0, "d_yd": 0.0, "d_7d": 11.99}, {"asin": "B0F32XZYGM", "sku": "PL005-006", "curr": "USD", "qty_today": 1, "today": 11.99, "yd": 0.0, "d7": 0.0, "d_yd": 11.99, "d_7d": 11.99}, {"asin": "B0DCCJZHMV", "sku": "R806-013", "curr": "USD", "qty_today": 2, "today": 11.98, "yd": 65.89, "d7": 55.92, "d_yd": -53.91, "d_7d": -43.94}, {"asin": "B01N4M4GYS", "sku": "R059-109", "curr": "USD", "qty_today": 1, "today": 10.9, "yd": 0.0, "d7": 0.0, "d_yd": 10.9, "d_7d": 10.9}, {"asin": "B07XZG9P5Q", "sku": "R806-006", "curr": "USD", "qty_today": 1, "today": 9.15, "yd": 0.0, "d7": 9.15, "d_yd": 9.15, "d_7d": 0.0}, {"asin": "B0BZWQXZGL", "sku": "R695-235", "curr": "USD", "qty_today": 1, "today": 8.26, "yd": 24.62, "d7": 8.25, "d_yd": -16.36, "d_7d": 0.01}, {"asin": "B0DDFCSMXH", "sku": "R806-005", "curr": "USD", "qty_today": 1, "today": 8.15, "yd": 0.0, "d7": 0.0, "d_yd": 8.15, "d_7d": 8.15}, {"asin": "B088PMLVMH", "sku": "R695-040", "curr": "USD", "qty_today": 1, "today": 7.97, "yd": 7.97, "d7": 71.73, "d_yd": 0.0, "d_7d": -63.76}, {"asin": "B0F7XVCMDK", "sku": "R695-214", "curr": "USD", "qty_today": 1, "today": 7.17, "yd": 14.34, "d7": 7.17, "d_yd": -7.17, "d_7d": 0.0}, {"asin": "B0D47THGP3", "sku": "PL001-006", "curr": "USD", "qty_today": 1, "today": 6.99, "yd": 0.0, "d7": 16.98, "d_yd": 6.99, "d_7d": -9.99}, {"asin": "B0DD66B2TJ", "sku": "R806-015", "curr": "USD", "qty_today": 1, "today": 5.99, "yd": 17.97, "d7": 24.97, "d_yd": -11.98, "d_7d": -18.98}, {"asin": "B0DCDSHKF3", "sku": "R806-016", "curr": "USD", "qty_today": 1, "today": 5.95, "yd": 0.0, "d7": 0.0, "d_yd": 5.95, "d_7d": 5.95}, {"asin": "B0F9FR129N", "sku": "R695-248", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.49, "d7": 19.98, "d_yd": -7.49, "d_7d": -19.98}, {"asin": "B0FJMSRF8S", "sku": "R695-257", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 16.99, "d_yd": 0.0, "d_7d": -16.99}, {"asin": "B0F9FQ9BK6", "sku": "R695-245", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.99, "d_yd": 0.0, "d_7d": -6.99}, {"asin": "B0F9FLPNV7", "sku": "R695-246", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 7.99, "d_yd": -7.99, "d_7d": -7.99}, {"asin": "B01HDCGI4Y", "sku": "R163-131", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 21.95, "d_yd": 0.0, "d_7d": -21.95}, {"asin": "B01BEVS262", "sku": "R163-142", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.57, "d_yd": 0.0, "d_7d": -20.57}, {"asin": "B0F6V7J4FX", "sku": "PL007-001", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 36.05, "d7": 10.3, "d_yd": -36.05, "d_7d": -10.3}, {"asin": "B0DCDCRTW6", "sku": "R806-012", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 20.78, "d7": 0.0, "d_yd": -20.78, "d_7d": 0.0}, {"asin": "B0D7Z99845", "sku": "PL001-013", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.99, "d_yd": 0.0, "d_7d": -9.99}, {"asin": "B0D816LH3Z", "sku": "PL001-011", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.97, "d_yd": 0.0, "d_7d": -19.97}, {"asin": "B0DCD12LBY", "sku": "R806-009", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 5.95, "d7": 0.0, "d_yd": -5.95, "d_7d": 0.0}, {"asin": "B09SPD17XJ", "sku": "R695-233", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 6.49, "d7": 0.0, "d_yd": -6.49, "d_7d": 0.0}, {"asin": "B00G6B4UNA", "sku": "R695-226", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.83, "d7": 0.0, "d_yd": -7.83, "d_7d": 0.0}, {"asin": "B09FVB3NHV", "sku": "R799-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 56.98, "d7": 0.0, "d_yd": -56.98, "d_7d": 0.0}, {"asin": "B0F24X6L65", "sku": "PL010-001", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 15.98, "d7": 0.0, "d_yd": -15.98, "d_7d": 0.0}, {"asin": "B0BN21F336", "sku": "R786-107", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 14.99, "d7": 0.0, "d_yd": -14.99, "d_7d": 0.0}, {"asin": "B072MYVC7N", "sku": "R044-099", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 14.64, "d_yd": 0.0, "d_7d": -14.64}, {"asin": "B0DBFQLZRG", "sku": "R806-030", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.98, "d_yd": 0.0, "d_7d": -19.98}, {"asin": "B0012KCVQS", "sku": "R195-527", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 23.4, "d7": 0.0, "d_yd": -23.4, "d_7d": 0.0}, {"asin": "B084GY6NBC", "sku": "R695-011", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 8.99, "d7": 26.79, "d_yd": -8.99, "d_7d": -26.79}, {"asin": "B00SQ50OXY", "sku": "R260-113", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 211.0, "d7": 211.0, "d_yd": -211.0, "d_7d": -211.0}, {"asin": "B01E4P6O38", "sku": "R044-098", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 8.99, "d7": 0.0, "d_yd": -8.99, "d_7d": 0.0}, {"asin": "B0F9FRKD6R", "sku": "R695-251", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B00JS18EKA", "sku": "R303-340", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 138.58, "d7": 0.0, "d_yd": -138.58, "d_7d": 0.0}, {"asin": "B0FLDK11TQ", "sku": "PL013-004", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 7.99, "d_yd": 0.0, "d_7d": -7.99}, {"asin": "B0DJSZF3F3", "sku": "PL005-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 23.98, "d_yd": 0.0, "d_7d": -23.98}, {"asin": "B0BC6RSS1S", "sku": "R695-005", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 8.3, "d_yd": 0.0, "d_7d": -8.3}, {"asin": "B0799R92XJ", "sku": "R580-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 18.99, "d_yd": 0.0, "d_7d": -18.99}, {"asin": "B09W44GW6W", "sku": "R695-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 17.99, "d_yd": 0.0, "d_7d": -17.99}, {"asin": "B0799QBTD4", "sku": "R580-007", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 58.99, "d7": 58.99, "d_yd": -58.99, "d_7d": -58.99}, {"asin": "B09N3CJNCB", "sku": "R243-100", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 699.98, "d7": 0.0, "d_yd": -699.98, "d_7d": 0.0}, {"asin": "B00O6LGLC0", "sku": "R106-018", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B097G9C2MH", "sku": "R059-206", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 55.8, "d7": 27.9, "d_yd": -55.8, "d_7d": -27.9}, {"asin": "B00BQOP3VK", "sku": "R059-154", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 24.94, "d_yd": 0.0, "d_7d": -24.94}, {"asin": "B07FKWPHZF", "sku": "R260-107", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 1114.0, "d7": 0.0, "d_yd": -1114.0, "d_7d": 0.0}, {"asin": "B08YT82V5X", "sku": "R401-112", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B016WQTJ4S", "sku": "R598-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 80.0, "d_yd": 0.0, "d_7d": -80.0}, {"asin": "B01CILGELM", "sku": "R437-206", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 10.21, "d7": 0.0, "d_yd": -10.21, "d_7d": 0.0}, {"asin": "B00886IECE", "sku": "R204-544", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.56, "d_yd": 0.0, "d_7d": -19.56}, {"asin": "B008FPZ98K", "sku": "R116-203", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 0.0, "d_yd": 0.0, "d_7d": 0.0}, {"asin": "B002YAEA1Y", "sku": "R020-118", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 119.96, "d_yd": 0.0, "d_7d": -119.96}, {"asin": "B0FNWR2D9B", "sku": "R695-266", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 6.49, "d_yd": 0.0, "d_7d": -6.49}, {"asin": "B09FGBGKHX", "sku": "R695-239", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 19.78, "d_yd": -9.99, "d_7d": -19.78}, {"asin": "B08PW6ZVLK", "sku": "R712-031", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 20.0, "d_yd": 0.0, "d_7d": -20.0}, {"asin": "B00M777566", "sku": "R437-204", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 18.0, "d7": 18.63, "d_yd": -18.0, "d_7d": -18.63}, {"asin": "B0CPJJV4S9", "sku": "PL001-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 6.99, "d7": 8.99, "d_yd": -6.99, "d_7d": -8.99}, {"asin": "B0DBFP8FYL", "sku": "R806-029", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 7.99, "d7": 0.0, "d_yd": -7.99, "d_7d": 0.0}, {"asin": "B0DD5TVSM9", "sku": "R806-014", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 11.98, "d7": 24.71, "d_yd": -11.98, "d_7d": -24.71}, {"asin": "B0F1DJJP3S", "sku": "PL013-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 9.99, "d_yd": 0.0, "d_7d": -9.99}, {"asin": "B0DSWB562R", "sku": "PL008-003", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 9.99, "d7": 0.0, "d_yd": -9.99, "d_7d": 0.0}, {"asin": "B0DMWDG4VD", "sku": "PL008-002", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 15.99, "d_yd": 0.0, "d_7d": -15.99}, {"asin": "B0C5FR12SJ", "sku": "R695-027", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 41.94, "d7": 56.2, "d_yd": -41.94, "d_7d": -56.2}, {"asin": "B0D6XGP2Q4", "sku": "R059-286", "curr": "USD", "qty_today": 0, "today": 0.0, "yd": 0.0, "d7": 19.81, "d_yd": 0.0, "d_7d": -19.81}]}}};
 
-const C = {
-  today: '#3ecf8e', yd: '#5b8dee', d7: '#a78bfa',
-  neg: '#f56565', pos: '#3ecf8e',
-  grid: '#1e2640', text: '#4e5d7a',
-};
-Chart.defaults.color = C.text;
-Chart.defaults.borderColor = C.grid;
+// ── state ─────────────────────────────────────────────────────────────
+let activeCurr = 'USD';
+let tSort = {k:'today', dir:-1};
+let tFilter = {q: ''};
+
+// ── helpers ───────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const fD = n => '$' + (+n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fI = n => (+n).toLocaleString('en-US');
+const Cg = {today:'#3ecf8e',yd:'#5b8dee',d7:'#a78bfa',neg:'#f56565',grid:'#1e2640',text:'#4e5d7a'};
+const tip = {backgroundColor:'#0f1420',borderColor:'#1e2640',borderWidth:1,
+  titleColor:'#dde4f0',bodyColor:'#8899bb',padding:10,cornerRadius:6};
+
+Chart.defaults.color = Cg.text;
+Chart.defaults.borderColor = Cg.grid;
 Chart.defaults.font.family = "'DM Mono', monospace";
 Chart.defaults.font.size = 11;
 
-const mkPlugin = () => ({
-  plugins:{
-    legend:{display:false},
-    tooltip:{
-      backgroundColor:'#0f1420',borderColor:'#1e2640',borderWidth:1,
-      titleColor:'#dde4f0',bodyColor:'#8899bb',padding:10,cornerRadius:6,
-      callbacks:{label: ctx => ' ' + ctx.dataset.label + ': ' + fmtD(ctx.raw)}
-    }
-  }
+// chart instances for destroy/recreate on currency switch
+let charts = {};
+
+// ── Header ─────────────────────────────────────────────────────────────
+const L = DATA.labels;
+$('hDates').innerHTML = `
+  <div class="date-pill"><div class="dot dot-t"></div>Today ${L.today}</div>
+  <div class="date-pill"><div class="dot dot-y"></div>Yday ${L.yd}</div>
+  <div class="date-pill"><div class="dot dot-7"></div>7d ${L.d7}</div>`;
+
+// ── Currency tabs ──────────────────────────────────────────────────────
+DATA.currencies.forEach(c => {
+  const btn = document.createElement('button');
+  btn.className = 'curr-tab' + (c === 'USD' ? ' active' : '');
+  btn.textContent = c;
+  btn.addEventListener('click', () => {
+    activeCurr = c;
+    document.querySelectorAll('.curr-tab').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    render();
+  });
+  $('currTabs').appendChild(btn);
 });
 
-// ── Header dates ──────────────────────────────────────────────────────
-const hl = DATA.labels;
-$('headerDates').innerHTML = `
-  <div class="date-pill"><div class="dot dot-today"></div>Today ${hl.today}</div>
-  <div class="date-pill"><div class="dot dot-yd"></div>Yday ${hl.yd}</div>
-  <div class="date-pill"><div class="dot dot-d7"></div>7d ago ${hl.d7}</div>`;
+// ── Main render ────────────────────────────────────────────────────────
+function render() {
+  const slice = DATA.slices[activeCurr];
+  renderKPI(slice.kpi);
+  //renderSumBar(slice.kpi);
+  renderTopSKU(slice.top_skus);
+  renderMovers(slice.waterfall);
+  renderCurrDonut();   // always from ALL data
+  renderTable(slice.table);
+}
 
-// ── KPI cards ──────────────────────────────────────────────────────────
-const k = DATA.kpi;
-const kpis = [
-  {label:'Revenue Today', val: fmtD(k.rev_today), sub: `${k.units_today} units`, cls:'neutral', col:'var(--today)'},
-  {label:'Revenue Yesterday', val: fmtD(k.rev_yd), sub: hl.yd, cls:'neutral', col:'var(--yd)'},
-  {label:'Revenue 7d Ago', val: fmtD(k.rev_7d), sub: hl.d7, cls:'neutral', col:'var(--d7)'},
-  {label:'Δ vs Yesterday', val: (k.delta_yd>=0?'+':'')+fmtD(k.delta_yd).replace('$',''), sub: (k.delta_yd_pct>0?'▲ ':'▼ ')+Math.abs(k.delta_yd_pct)+'%', cls: k.delta_yd>=0?'pos':'neg', col: k.delta_yd>=0?'var(--pos)':'var(--neg)'},
-  {label:'Δ vs 7d Ago',    val: (k.delta_7d>=0?'+':'')+fmtD(k.delta_7d).replace('$',''), sub: (k.delta_7d_pct>0?'▲ ':'▼ ')+Math.abs(k.delta_7d_pct)+'%', cls: k.delta_7d>=0?'pos':'neg', col: k.delta_7d>=0?'var(--pos)':'var(--neg)'},
-  {label:'Units Today', val: fmtI(k.units_today), sub:'total sold today', cls:'neutral', col:'var(--today)'},
-];
-$('kpiGrid').innerHTML = kpis.map(c=>`
-  <div class="kpi-card" style="--line-color:${c.col}">
-    <div class="kpi-label">${c.label}</div>
-    <div class="kpi-value" style="color:${c.col}">${c.val}</div>
+// ── KPI ────────────────────────────────────────────────────────────────
+function renderKPI(k) {
+  $('kpiGrid').innerHTML = [
+    {l:'Revenue Today',     v:fD(k.rev_today),  sub:`${fI(k.units_today)} units`,         cls:'neu', lc:'var(--today)'},
+    {l:'Revenue Yesterday', v:fD(k.rev_yd),     sub:L.yd,                                  cls:'neu', lc:'var(--yd)'},
+    {l:'Revenue 7d Ago',    v:fD(k.rev_7d),     sub:L.d7,                                  cls:'neu', lc:'var(--d7)'},
+    {l:'Δ vs Yesterday',
+     v:(k.delta_yd>=0?'+':'')+fD(k.delta_yd).replace('$',''),
+     sub:(k.delta_yd>=0?'▲ ':'▼ ')+Math.abs(k.delta_yd_pct)+'%',
+     cls:k.delta_yd>=0?'pos':'neg', lc:k.delta_yd>=0?'var(--pos)':'var(--neg)'},
+    {l:'Δ vs 7d Ago',
+     v:(k.delta_7d>=0?'+':'')+fD(k.delta_7d).replace('$',''),
+     sub:(k.delta_7d>=0?'▲ ':'▼ ')+Math.abs(k.delta_7d_pct)+'%',
+     cls:k.delta_7d>=0?'pos':'neg', lc:k.delta_7d>=0?'var(--pos)':'var(--neg)'},
+  ].map(c=>`<div class="kpi-card" style="--lc:${c.lc}">
+    <div class="kpi-label">${c.l}</div>
+    <div class="kpi-val" style="color:${c.lc}">${c.v}</div>
     <div class="kpi-sub ${c.cls}">${c.sub}</div>
   </div>`).join('');
+}
 
-// ── Summary bar ──────────────────────────────────────────────────────
-const total = k.rev_today + k.rev_yd + k.rev_7d;
-const pctOf = v => total ? Math.round(v/total*100) : 0;
-$('summaryBar').innerHTML = [
-  {label:`Today ${hl.today}`,   val:k.rev_today, cls:'today-color', pct: pctOf(k.rev_today)},
-  {label:`Yesterday ${hl.yd}`,  val:k.rev_yd,    cls:'yd-color',    pct: pctOf(k.rev_yd)},
-  {label:`7d Ago ${hl.d7}`,     val:k.rev_7d,    cls:'d7-color',    pct: pctOf(k.rev_7d)},
-].map(s=>`
-  <div class="bar-segment">
-    <div class="bar-seg-label">${s.label}</div>
-    <div class="bar-seg-value ${s.cls}">${fmtD(s.val)}</div>
-    <div class="bar-seg-pct" style="color:var(--muted)">${s.pct}% of 3-day total</div>
+// ── Summary bar ────────────────────────────────────────────────────────
+function renderSumBar(k) {
+  const tot = k.rev_today + k.rev_yd + k.rev_7d;
+  $('sumBar').innerHTML = [
+    {l:`Today ${L.today}`,     v:k.rev_today, cl:'var(--today)'},
+    {l:`Yesterday ${L.yd}`,    v:k.rev_yd,    cl:'var(--yd)'},
+    {l:`7d Ago ${L.d7}`,       v:k.rev_7d,    cl:'var(--d7)'},
+  ].map(s=>`<div class="bar-seg">
+    <div class="bs-label">${s.l}</div>
+    <div class="bs-val" style="color:${s.cl}">${fD(s.v)}</div>
+    <div class="bs-pct">${tot?Math.round(s.v/tot*100):0}% of 3-day total</div>
   </div>`).join('');
+}
 
-// ── Chart 1: Top 20 ASINs grouped bar ────────────────────────────────
-(()=>{
-  const rows = DATA.top_asins;
-  const labels = rows.map(r=>r.asin);
-  new Chart($('chartTop'),{
-    type:'bar',
-    data:{
-      labels,
-      datasets:[
-        {label:'Today',     data:rows.map(r=>r.today), backgroundColor:C.today+'cc', borderRadius:3},
-        {label:'Yesterday', data:rows.map(r=>r.yd),    backgroundColor:C.yd+'cc',    borderRadius:3},
-        {label:'7d Ago',    data:rows.map(r=>r.d7),    backgroundColor:C.d7+'cc',    borderRadius:3},
+// ── Top 20 SKU bar ─────────────────────────────────────────────────────
+function renderTopSKU(rows) {
+  if (charts.top) { charts.top.destroy(); }
+  charts.top = new Chart($('cTop'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.sku),
+      datasets: [
+        {label:'Today',     data:rows.map(r=>r.today), backgroundColor:Cg.today+'cc', borderRadius:3},
+        {label:'Yesterday', data:rows.map(r=>r.yd),    backgroundColor:Cg.yd+'cc',    borderRadius:3},
+        {label:'7d Ago',    data:rows.map(r=>r.d7),    backgroundColor:Cg.d7+'cc',    borderRadius:3},
       ]
     },
-    options:{
+    options: {
       responsive:true, maintainAspectRatio:false,
-      ...mkPlugin(),
-      plugins:{...mkPlugin().plugins, legend:{
-        display:true, position:'top', align:'end',
-        labels:{color:C.text, boxWidth:10, padding:16, font:{size:11}}
-      }},
-      scales:{
-        x:{ticks:{color:C.text, maxRotation:38, font:{size:9}}, grid:{color:C.grid}},
-        y:{ticks:{color:C.text, callback:v=>'$'+v.toLocaleString()}, grid:{color:C.grid}}
+      plugins: {
+        legend:{display:true,position:'top',align:'end',
+          labels:{color:Cg.text,boxWidth:10,padding:14,font:{size:11}}},
+        tooltip:{...tip, callbacks:{label:ctx=>` ${ctx.dataset.label}: ${fD(ctx.raw)}`}}
+      },
+      scales: {
+        x:{ticks:{color:Cg.text,maxRotation:38,font:{size:9}},grid:{color:Cg.grid}},
+        y:{ticks:{color:Cg.text,callback:v=>'$'+v.toLocaleString()},grid:{color:Cg.grid}}
       }
     }
-  });
-})();
-
-// ── Chart 2: Team grouped bar ─────────────────────────────────────────
-(()=>{
-  const rows = DATA.teams;
-  new Chart($('chartTeam'),{
-    type:'bar',
-    data:{
-      labels:rows.map(r=>r.team),
-      datasets:[
-        {label:'Today',     data:rows.map(r=>r.today), backgroundColor:C.today+'cc', borderRadius:4},
-        {label:'Yesterday', data:rows.map(r=>r.yd),    backgroundColor:C.yd+'cc',    borderRadius:4},
-        {label:'7d Ago',    data:rows.map(r=>r.d7),    backgroundColor:C.d7+'cc',    borderRadius:4},
-      ]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      ...mkPlugin(),
-      scales:{
-        x:{ticks:{color:C.text}, grid:{color:C.grid}},
-        y:{ticks:{color:C.text, callback:v=>'$'+v.toLocaleString()}, grid:{color:C.grid}}
-      }
-    }
-  });
-})();
-
-// ── Chart 3: Currency donut ────────────────────────────────────────────
-(()=>{
-  const rows = DATA.currencies;
-  const palette = [C.today, C.yd, C.d7, '#fb923c', '#f56565'];
-  new Chart($('chartCurr'),{
-    type:'doughnut',
-    data:{
-      labels:rows.map(r=>r.curr),
-      datasets:[{
-        label:'Revenue Today',
-        data:rows.map(r=>r.today),
-        backgroundColor:palette.slice(0,rows.length),
-        borderColor:'#070a10', borderWidth:3, hoverOffset:8
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false, cutout:'58%',
-      plugins:{
-        legend:{display:true, position:'bottom', labels:{color:C.text, boxWidth:10, padding:12}},
-        tooltip:{callbacks:{label:ctx=>' '+ctx.label+': '+fmtD(ctx.raw)}}
-      }
-    }
-  });
-})();
-
-// ── Chart 4: Waterfall / biggest movers ───────────────────────────────
-(()=>{
-  const rows = DATA.waterfall;
-  const labels = rows.map(r=>r.asin);
-  const deltas = rows.map(r=>r.delta);
-  const colors = deltas.map(v=>v>=0 ? C.today+'cc' : C.neg+'cc');
-  new Chart($('chartWF'),{
-    type:'bar',
-    data:{
-      labels,
-      datasets:[{
-        label:'Δ vs Yesterday',
-        data:deltas,
-        backgroundColor:colors,
-        borderColor:colors.map(c=>c.replace('cc','')),
-        borderWidth:1, borderRadius:4
-      }]
-    },
-    options:{
-      responsive:true, maintainAspectRatio:false,
-      ...mkPlugin(),
-      plugins:{...mkPlugin().plugins, tooltip:{
-        callbacks:{label:ctx=>' '+(ctx.raw>=0?'+':'')+fmtD(ctx.raw)}
-      }},
-      scales:{
-        x:{ticks:{color:C.text, maxRotation:38, font:{size:9}}, grid:{color:C.grid}},
-        y:{ticks:{color:C.text, callback:v=>(v>=0?'+':'')+v.toLocaleString()}, grid:{color:C.grid}}
-      }
-    }
-  });
-})();
-
-// ── Table ─────────────────────────────────────────────────────────────
-let tRows = [...DATA.table];
-let tSort  = {k:'today', dir:-1};
-let tFilter = {q:'', team:'', curr:''};
-
-const deltaCell = v=>{
-  if(Math.abs(v)<0.005) return `<td class="r zero-cell mono">—</td>`;
-  const cls = v>0?'pos-cell':'neg-cell';
-  return `<td class="r ${cls} mono">${v>0?'+':''}${fmtD(v).replace('$','')}</td>`;
-};
-const currBadge = c=>`<span class="badge b-${c.toLowerCase()}">${c}</span>`;
-const teamBadge = t=>`<span class="badge b-${t.toLowerCase()}">${t}</span>`;
-
-function renderTable(){
-  let data = [...DATA.table];
-  const {q, team, curr} = tFilter;
-  if(q){const ql=q.toLowerCase(); data=data.filter(r=>r.asin.toLowerCase().includes(ql)||r.sku.toLowerCase().includes(ql))}
-  if(team) data=data.filter(r=>r.team.toUpperCase()===team);
-  if(curr) data=data.filter(r=>r.curr===curr);
-  data.sort((a,b)=>tSort.dir*(a[tSort.k]>b[tSort.k]?1:a[tSort.k]<b[tSort.k]?-1:0));
-  $('rowInfo').textContent = `${data.length} / ${DATA.table.length} rows`;
-  $('tBody').innerHTML = data.map(r=>`<tr>
-    <td class="mono" style="color:#8899bb;font-size:.7rem">${r.asin}</td>
-    <td class="mono" style="font-size:.7rem">${r.sku}</td>
-    <td>${teamBadge(r.team)}</td>
-    <td>${currBadge(r.curr)}</td>
-    <td class="r">${fmtI(r.qty_today)}</td>
-    <td class="r mono" style="color:var(--today)">${fmtD(r.today)}</td>
-    <td class="r mono" style="color:var(--yd)">${fmtD(r.yd)}</td>
-    <td class="r mono" style="color:var(--d7)">${fmtD(r.d7)}</td>
-    ${deltaCell(r.d_yd)}
-    ${deltaCell(r.d_7d)}
-  </tr>`).join('');
-  // Update sort indicators
-  document.querySelectorAll('#mainTable thead th').forEach(th=>{
-    th.classList.remove('asc','desc');
-    if(th.dataset.k===tSort.k) th.classList.add(tSort.dir===1?'asc':'desc');
   });
 }
 
-document.querySelectorAll('#mainTable thead th').forEach(th=>{
-  th.addEventListener('click',()=>{
-    if(tSort.k===th.dataset.k) tSort.dir*=-1; else {tSort.k=th.dataset.k;tSort.dir=-1;}
-    renderTable();
+// ── Biggest movers ─────────────────────────────────────────────────────
+function renderMovers(rows) {
+  if (charts.wf) { charts.wf.destroy(); }
+  const cols = rows.map(r => r.delta >= 0 ? Cg.today+'cc' : Cg.neg+'cc');
+  charts.wf = new Chart($('cWF'), {
+    type: 'bar',
+    data: {
+      labels: rows.map(r => r.sku),
+      datasets: [{
+        label:'Δ vs Yesterday',
+        data: rows.map(r => r.delta),
+        backgroundColor: cols,
+        borderColor: cols,
+        borderWidth: 1, borderRadius: 4
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{
+        legend:{display:false},
+        tooltip:{...tip, callbacks:{label:ctx=>` ${ctx.raw>=0?'+':''}${fD(ctx.raw)}`}}
+      },
+      scales:{
+        x:{ticks:{color:Cg.text,maxRotation:38,font:{size:9}},grid:{color:Cg.grid}},
+        y:{ticks:{color:Cg.text,callback:v=>(v>=0?'+':'')+v.toLocaleString()},grid:{color:Cg.grid}}
+      }
+    }
+  });
+}
+
+// ── Currency donut (always global) ─────────────────────────────────────
+function renderCurrDonut() {
+  if (charts.curr) { charts.curr.destroy(); }
+  const rows = DATA.currency_chart;
+  const pal = [Cg.today, Cg.yd, Cg.d7, '#fb923c', '#f56565'];
+  charts.curr = new Chart($('cCurr'), {
+    type: 'doughnut',
+    data: {
+      labels: rows.map(r => r.curr),
+      datasets: [{
+        label:'Revenue Today',
+        data: rows.map(r => r.today),
+        backgroundColor: pal.slice(0, rows.length),
+        borderColor: '#070a10', borderWidth: 3, hoverOffset: 8
+      }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false, cutout:'58%',
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{color:Cg.text,boxWidth:10,padding:12}},
+        tooltip:{...tip,callbacks:{label:ctx=>` ${ctx.label}: ${fD(ctx.raw)}`}}
+      }
+    }
+  });
+}
+
+// ── Table ──────────────────────────────────────────────────────────────
+function renderTable(allRows) {
+  let rows = [...allRows];
+  if (tFilter.q) {
+    const q = tFilter.q.toLowerCase();
+    rows = rows.filter(r =>
+      r.sku.toLowerCase().includes(q) || r.asin.toLowerCase().includes(q)
+    );
+  }
+  rows.sort((a,b) => tSort.dir*(a[tSort.k] > b[tSort.k] ? 1 : a[tSort.k] < b[tSort.k] ? -1 : 0));
+
+  $('rInfo').textContent = `${rows.length} / ${allRows.length} rows`;
+
+  const cb = c => `<span class="badge b-${c.toLowerCase()}">${c}</span>`;
+  const dc = v => {
+    if (Math.abs(v) < 0.005) return `<td class="r zc mono">—</td>`;
+    return `<td class="r ${v>0?'pc':'nc'} mono">${v>0?'+':''}${fD(v).replace('$','')}</td>`;
+  };
+
+  $('tBody').innerHTML = rows.map(r => `<tr>
+    <td class="mono" style="font-size:.7rem">${r.sku}</td>
+    <td class="mono" style="color:#8899bb;font-size:.68rem">${r.asin}</td>
+    <td>${cb(r.curr)}</td>
+    <td class="r">${fI(r.qty_today)}</td>
+    <td class="r mono" style="color:var(--today)">${fD(r.today)}</td>
+    <td class="r mono" style="color:var(--yd)">${fD(r.yd)}</td>
+    <td class="r mono" style="color:var(--d7)">${fD(r.d7)}</td>
+    ${dc(r.d_yd)}${dc(r.d_7d)}
+  </tr>`).join('');
+
+  document.querySelectorAll('#mainTbl thead th').forEach(th => {
+    th.classList.remove('asc','desc');
+    if (th.dataset.k === tSort.k) th.classList.add(tSort.dir===1?'asc':'desc');
+  });
+}
+
+// Sort headers
+document.querySelectorAll('#mainTbl thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    // Re-render with updated sort using current slice's table
+    if (tSort.k === th.dataset.k) tSort.dir *= -1;
+    else { tSort.k = th.dataset.k; tSort.dir = -1; }
+    renderTable(DATA.slices[activeCurr].table);
   });
 });
-$('tSearch').addEventListener('input',e=>{tFilter.q=e.target.value;renderTable()});
-$('tTeam').addEventListener('change',e=>{tFilter.team=e.target.value;renderTable()});
-$('tCurr').addEventListener('change',e=>{tFilter.curr=e.target.value;renderTable()});
+$('tS').addEventListener('input', e => {
+  tFilter.q = e.target.value;
+  renderTable(DATA.slices[activeCurr].table);
+});
 
-renderTable();
+// ── Initial render ─────────────────────────────────────────────────────
+render();
 </script>
 </body>
 </html>
